@@ -1,6 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 function honoApiPlugin(env: Record<string, string>): Plugin {
   return {
@@ -53,7 +54,37 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react(), tailwindcss(), honoApiPlugin(env)],
+    plugins: [
+      react(),
+      tailwindcss(),
+      honoApiPlugin(env),
+      // PWA: generate a Workbox service worker that precaches the built app
+      // shell so the SPA is installable and loads instantly. Everything else
+      // (search/Douban/streams/images under /api) keeps hitting the network.
+      VitePWA({
+        registerType: 'autoUpdate',
+        // Auto-inject the registration; no app code changes needed. New SW
+        // self-activates (skipWaiting + clientsClaim) and the new build is
+        // applied on the next full load/refresh.
+        injectRegister: 'auto',
+        // Keep the hand-maintained public/manifest.json (already linked in
+        // index.html) as the single source of truth — don't generate one.
+        manifest: false,
+        workbox: {
+          // Precache the app shell only.
+          globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+          // SPA fallback for client routes — but never answer /api requests
+          // (auth, NDJSON search, m3u8/image proxy) with index.html; those
+          // must always reach the Hono backend.
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api\//],
+          cleanupOutdatedCaches: true,
+        },
+        // The Hono dev middleware + Vite HMR own dev; don't register a SW
+        // there (avoids stale caching while developing).
+        devOptions: { enabled: false },
+      }),
+    ],
     server: {
       host: '0.0.0.0',
       port: 3000,
