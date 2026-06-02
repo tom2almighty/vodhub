@@ -1,9 +1,11 @@
+import type { DoubanCategoryResult } from './api/douban';
 import type { PlayRecord, RecommendationHomeResult } from './types';
 
 const STORAGE_KEY = 'vodhub_cache';
 const CACHE_VERSION = '5.0.0';
 const SEARCH_HISTORY_LIMIT = 20;
 const REC_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DOUBAN_CATEGORY_TTL_MS = REC_TTL_MS;
 
 interface Entry<T> {
   data: T;
@@ -14,6 +16,7 @@ interface Store {
   playRecords?: Entry<Record<string, PlayRecord>>;
   searchHistory?: Entry<string[]>;
   recommendations?: { data: RecommendationHomeResult; timestamp: number };
+  doubanCategories?: Record<string, { data: DoubanCategoryResult; timestamp: number }>;
 }
 
 function read(): Store {
@@ -154,5 +157,30 @@ export function getCachedRecommendations(): RecommendationHomeResult | null {
 export function setCachedRecommendations(data: RecommendationHomeResult): void {
   const store = read();
   store.recommendations = { data, timestamp: Date.now() };
+  write(store);
+}
+
+// ===== Douban category cache =====
+
+export function getCachedDoubanCategory(key: string): DoubanCategoryResult | null {
+  const store = read();
+  const entry = store.doubanCategories?.[key];
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > DOUBAN_CATEGORY_TTL_MS) {
+    if (store.doubanCategories) {
+      delete store.doubanCategories[key];
+      write(store);
+    }
+    return null;
+  }
+  return entry.data;
+}
+
+export function setCachedDoubanCategory(key: string, data: DoubanCategoryResult): void {
+  const store = read();
+  store.doubanCategories = {
+    ...(store.doubanCategories || {}),
+    [key]: { data, timestamp: Date.now() },
+  };
   write(store);
 }

@@ -21,6 +21,15 @@ export interface DoubanCategories {
   show: string[];
 }
 
+export function getDoubanCategoryCacheKey(params: DoubanCategoryParams): string {
+  return [
+    params.kind,
+    params.type,
+    String(params.start ?? 0),
+    String(params.limit ?? 18),
+  ].join('|');
+}
+
 export async function fetchDoubanCategory(
   params: DoubanCategoryParams,
   signal?: AbortSignal,

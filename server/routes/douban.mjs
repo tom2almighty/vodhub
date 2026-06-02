@@ -1,6 +1,11 @@
 const COMMON_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 const DOUBAN_BASE = 'https://m.douban.com';
+const FETCH_TIMEOUT_MS = 10000;
+const RECOMMENDATIONS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const CATEGORY_TTL_MS = RECOMMENDATIONS_TTL_MS;
+
+const responseCache = new Map();
 
 const MOVIE_TYPES = {
   全部: { kind: 'movie', category: '热门', type: '全部' },
@@ -43,30 +48,61 @@ function mapItems(items = []) {
   }));
 }
 
-async function fetchHot({ kind, category, type, start, limit }) {
+function getCached(key) {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    responseCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCached(key, data, ttl) {
+  responseCache.set(key, { data, expiresAt: Date.now() + ttl });
+}
+
+async function fetchJson(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort('request timeout'), FETCH_TIMEOUT_MS);
+  try {
+    const resp = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        Referer: 'https://movie.douban.com/',
+        'User-Agent': COMMON_UA,
+        Accept: 'application/json, text/plain, */*',
+      },
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchHot({ kind, category, type, start, limit }, cacheTtl = CATEGORY_TTL_MS) {
   const url = new URL(`/rexxar/api/v2/subject/recent_hot/${kind}`, DOUBAN_BASE);
   url.searchParams.set('start', String(start || '0'));
   url.searchParams.set('limit', String(limit || '18'));
   if (category) url.searchParams.set('category', category);
   if (type) url.searchParams.set('type', type);
 
-  const resp = await fetch(url.toString(), {
-    headers: {
-      Referer: 'https://movie.douban.com/',
-      'User-Agent': COMMON_UA,
-      Accept: 'application/json, text/plain, */*',
-    },
-  });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  const data = await resp.json();
-  return { total: data.total || 0, items: mapItems(data.items || []) };
+  const cacheKey = url.toString();
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const data = await fetchJson(cacheKey);
+  const result = { total: data.total || 0, items: mapItems(data.items || []) };
+  setCached(cacheKey, result, cacheTtl);
+  return result;
 }
 
 export async function recommendations(c) {
   const [movies, tv, show] = await Promise.all([
-    fetchHot({ ...MOVIE_TYPES.全部, limit: 18 }),
-    fetchHot({ ...TV_TYPES.综合, limit: 18 }),
-    fetchHot({ ...SHOW_TYPES.综合, limit: 18 }),
+    fetchHot({ ...MOVIE_TYPES.全部, limit: 18 }, RECOMMENDATIONS_TTL_MS),
+    fetchHot({ ...TV_TYPES.综合, limit: 18 }, RECOMMENDATIONS_TTL_MS),
+    fetchHot({ ...SHOW_TYPES.综合, limit: 18 }, RECOMMENDATIONS_TTL_MS),
   ]);
   return c.json(
     { movies: movies.items, tvShows: tv.items, varietyShows: show.items },
