@@ -9,7 +9,7 @@ import * as play from './routes/play-session.mjs';
 import * as douban from './routes/douban.mjs';
 import * as image from './routes/image.mjs';
 
-const PUBLIC_ROUTES = new Set(['/auth/login', '/auth/verify', '/site-config']);
+const PUBLIC_ROUTES = new Set(['/auth/login', '/auth/verify', '/site-config', '/health']);
 
 export function createApp() {
   const app = new Hono().basePath('/api');
@@ -31,6 +31,7 @@ export function createApp() {
 
   app.post('/auth/login', auth.login);
   app.get('/auth/verify', auth.verify);
+  app.get('/health', (c) => c.json({ ok: true }));
   app.get('/site-config', site.siteConfig);
   app.get('/search-stream', search.searchStream);
   app.get('/search', search.search);
