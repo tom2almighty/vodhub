@@ -1,7 +1,5 @@
 import app from '../server/app.mjs';
 
-export const config = { runtime: 'edge' };
-
 function requestForRoute(request) {
   const url = new URL(request.url);
   const route = url.searchParams.get('__vodhub_route');
