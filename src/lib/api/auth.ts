@@ -12,9 +12,12 @@ export async function login(password: string): Promise<string | null> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
   });
-  if (!resp.ok) return null;
-  const data = (await resp.json()) as { token?: string };
-  return data.token || null;
+  const data = (await resp.json().catch(() => null)) as { token?: string; error?: string } | null;
+  if (resp.status === 401) return null;
+  if (!resp.ok) {
+    throw new Error(data?.error || `登录接口异常：HTTP ${resp.status}`);
+  }
+  return data?.token || null;
 }
 
 export async function verify(): Promise<boolean> {

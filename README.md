@@ -10,7 +10,7 @@ Mac CMS 聚合，基于 React + Vite + [@ouonnki/cms-core](https://www.npmjs.com
 | ---------------- | -------------------------------- | ---------------------------------------------------------- |
 | Vercel           | `api/[...route].mjs` + `vercel.json` | Vercel 原生 catch-all 文件路由自动匹配 `/api/*`；`vercel.json` 仅提供 SPA 回退 |
 | Cloudflare Pages | `functions/api/[[route]].mjs` | Dashboard 配置构建命令 `pnpm build`，输出目录 `dist` |
-| Netlify          | `netlify/edge-functions/api.mjs` | `netlify.toml` 已配置 Edge Functions 与 SPA 回退           |
+| Netlify          | `netlify/edge-functions/apid.mjs` | `netlify.toml` 已配置 Edge Functions 与 SPA 回退           |
 | Docker           | `Dockerfile` + `compose.yaml`    | 下载 `compose.yaml` 文件后 使用`docker compose up -d` 部署 |
 | 本地开发         | `vite.config.ts` 内嵌中间件      | `pnpm dev`                                                 |
 
