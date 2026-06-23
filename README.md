@@ -8,13 +8,13 @@ Mac CMS 聚合，基于 React + Vite + [@ouonnki/cms-core](https://www.npmjs.com
 
 | 平台             | 入口                             | 命令 / 说明                                                |
 | ---------------- | -------------------------------- | ---------------------------------------------------------- |
-| Vercel           | `api/[...route].mjs` + `vercel.json` | `/api/*` 由 Vercel Function 转发到 Hono；`vercel.json` 提供 SPA 回退 |
+| Vercel           | `api/index.mjs` + `vercel.json` | `/api/*` 由 Vercel Function 转发到 Hono；`vercel.json` 提供 SPA 回退 |
 | Cloudflare Pages | `functions/api/[[route]].mjs` + `wrangler.toml` | 构建命令 `pnpm build`，输出目录 `dist`                     |
 | Netlify          | `netlify/edge-functions/api.mjs` | `netlify.toml` 已配置 Edge Functions 与 SPA 回退           |
 | Docker           | `Dockerfile` + `compose.yaml`    | 下载 `compose.yaml` 文件后 使用`docker compose up -d` 部署 |
 | 本地开发         | `vite.config.ts` 内嵌中间件      | `pnpm dev`                                                 |
 
-Cloudflare Pages 直接使用 Wrangler 部署时，先执行 `pnpm build`，再执行 `npx wrangler pages deploy`。
+Cloudflare Pages 直接使用 Wrangler 部署时，先执行 `pnpm build`，再执行 `npx wrangler pages deploy dist`。
 
 ## 环境变量
 

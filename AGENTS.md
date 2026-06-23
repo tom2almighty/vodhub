@@ -28,7 +28,7 @@ All API business logic lives in **`server/`** and is assembled into a single Hon
 
 | Target | Entry | Mechanism |
 | --- | --- | --- |
-| Vercel | `api/[...route].mjs` | `hono/vercel` `handle()` |
+| Vercel | `api/index.mjs` | `vercel.json` rewrites `/api/*` to one Web-standard Function |
 | Cloudflare Pages | `functions/api/[[route]].mjs` | `hono/cloudflare-pages` `handle()` |
 | Netlify | `netlify/edge-functions/api.mjs` | `hono/netlify` `handle()` |
 | Node / Docker | `server.js` | `@hono/node-server` + `serveStatic` for `dist/` + SPA fallback |
