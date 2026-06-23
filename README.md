@@ -8,7 +8,7 @@ Mac CMS 聚合，基于 React + Vite + [@ouonnki/cms-core](https://www.npmjs.com
 
 | 平台             | 入口                             | 命令 / 说明                                                |
 | ---------------- | -------------------------------- | ---------------------------------------------------------- |
-| Vercel           | `app.mjs` + `vercel.json`        | Vercel 自动识别 Hono；`vercel.json` 提供 SPA 回退          |
+| Vercel           | `api/[...route].mjs` + `vercel.json` | `/api/*` 由 Vercel Function 转发到 Hono；`vercel.json` 提供 SPA 回退 |
 | Cloudflare Pages | `functions/api/[[route]].mjs`    | 构建命令 `pnpm build`，输出目录 `dist`                     |
 | Netlify          | `netlify/edge-functions/api.mjs` | `netlify.toml` 已配置 Edge Functions 与 SPA 回退           |
 | Docker           | `Dockerfile` + `compose.yaml`    | 下载 `compose.yaml` 文件后 使用`docker compose up -d` 部署 |
