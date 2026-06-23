@@ -28,8 +28,8 @@ All API business logic lives in **`server/`** and is assembled into a single Hon
 
 | Target | Entry | Mechanism |
 | --- | --- | --- |
-| Vercel | `api/index.mjs` | `vercel.json` rewrites `/api/*` to one Web-standard Function |
-| Cloudflare Pages | `functions/api/[[route]].mjs` | `hono/cloudflare-pages` `handle()` |
+| Vercel | `api/[...route].mjs` | Vercel 原生 catch-all 文件路由；`vercel.json` 仅提供 SPA 回退 |
+| Cloudflare Pages | `functions/api/[[route]].mjs` | `hono/cloudflare-pages` `handle()`，在 Dashboard 配置构建参数 |
 | Netlify | `netlify/edge-functions/api.mjs` | `hono/netlify` `handle()` |
 | Node / Docker | `server.js` | `@hono/node-server` + `serveStatic` for `dist/` + SPA fallback |
 | Local dev | `vite.config.ts` `honoApiPlugin` | Vite middleware that `ssrLoadModule`s `server/app.mjs` and bridges Node req/res ↔ Web `Request`/`Response` |
