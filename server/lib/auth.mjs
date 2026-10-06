@@ -13,7 +13,9 @@ function getConfig(env) {
 function base64UrlEncode(value) {
   const bytes = typeof value === 'string' ? new TextEncoder().encode(value) : value;
   let binary = '';
-  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
@@ -59,7 +61,7 @@ export async function createAuthToken(env) {
 
 async function verifyAuthToken(token, env) {
   const { authSecret } = getConfig(env);
-  if (!authSecret || !token || !token.includes('.')) return false;
+  if (!authSecret || !token?.includes('.')) return false;
   const [body, sig] = token.split('.');
   if (!body || !sig) return false;
   const expected = await hmacSign(body, authSecret);

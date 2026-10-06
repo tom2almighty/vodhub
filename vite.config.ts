@@ -28,7 +28,9 @@ function honoApiPlugin(env: Record<string, string>): Plugin {
 
             const webResp: Response = await app.fetch(request, env);
             res.statusCode = webResp.status;
-            webResp.headers.forEach((value, key) => res.setHeader(key, value));
+            webResp.headers.forEach((value, key) => {
+              res.setHeader(key, value);
+            });
             if (!webResp.body) {
               res.end();
               return;
@@ -96,19 +98,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             'react-vendor': ['react', 'react-dom', 'react-router-dom'],
             hls: ['hls.js'],
-            radix: [
-              '@radix-ui/react-dialog',
-              '@radix-ui/react-dropdown-menu',
-              '@radix-ui/react-label',
-              '@radix-ui/react-navigation-menu',
-              '@radix-ui/react-popover',
-              '@radix-ui/react-progress',
-              '@radix-ui/react-scroll-area',
-              '@radix-ui/react-separator',
-              '@radix-ui/react-slot',
-              '@radix-ui/react-tabs',
-              '@radix-ui/react-tooltip',
-            ],
+            'base-ui': ['@base-ui/react'],
             motion: ['motion'],
             query: ['@tanstack/react-query'],
           },

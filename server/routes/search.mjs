@@ -1,5 +1,5 @@
-import { loadSources } from '../lib/sources.mjs';
 import { createClient, mapItem } from '../lib/cms.mjs';
+import { loadSources } from '../lib/sources.mjs';
 
 export async function search(c) {
   const query = (c.req.query('q') || '').trim();

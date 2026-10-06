@@ -1,5 +1,5 @@
-import { findSource } from '../lib/sources.mjs';
 import { createClient, mapDetail } from '../lib/cms.mjs';
+import { findSource } from '../lib/sources.mjs';
 
 export async function fetchDetail(env, sourceId, id) {
   const source = await findSource(env, sourceId);

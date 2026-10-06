@@ -1,11 +1,11 @@
 import { queryOptions } from '@tanstack/react-query';
 import { fetchSiteConfig } from '@/lib/api/auth';
-import { fetchSourceDetail } from '@/lib/api/sources';
 import {
+  type DoubanCategoryParams,
   fetchDoubanCategories,
   fetchDoubanCategory,
-  type DoubanCategoryParams,
 } from '@/lib/api/douban';
+import { fetchSourceDetail } from '@/lib/api/sources';
 import { getAllPlayRecords, getSearchHistory } from '@/lib/db';
 import { queryKeys } from './keys';
 

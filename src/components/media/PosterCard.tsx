@@ -2,11 +2,12 @@ import { Layers, Play, Trash2 } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import type { SearchResult } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { createPlaySession, type PlaySessionPayload } from '@/lib/api/sources';
 import { deletePlayRecord } from '@/lib/db';
+import type { SearchResult } from '@/lib/types';
 import { cn, progressPct } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { PosterImage } from './PosterImage';
 
 const SESSION_KEY = 'vodhub_play_session';
@@ -43,7 +44,6 @@ function PosterCardImpl(props: PosterCardProps) {
     title,
     poster,
     year,
-    doubanId,
     rating,
     source,
     id,
@@ -133,9 +133,9 @@ function PosterCardImpl(props: PosterCardProps) {
 
   return (
     <div className="group cursor-pointer" onClick={handleClick}>
-      <div
+      <Card
         className={cn(
-          'relative aspect-[2/3] overflow-hidden rounded-xl border border-border bg-muted shadow-sm',
+          'relative aspect-2/3 overflow-hidden rounded-lg border border-border bg-muted shadow-sm',
           'transition-[transform,box-shadow,border-color] duration-300',
           'group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:shadow-md',
         )}
@@ -143,7 +143,7 @@ function PosterCardImpl(props: PosterCardProps) {
         <PosterImage src={poster} alt={title} />
 
         {/* Bottom legibility gradient */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
 
         {/* Hover overlay with play button */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -161,7 +161,7 @@ function PosterCardImpl(props: PosterCardProps) {
         {year && year !== 'unknown' && (
           <Badge
             variant="secondary"
-            className="absolute left-2 top-2 h-5 bg-black/55 px-1.5 text-[10px] text-white/85 backdrop-blur-sm hover:bg-black/55"
+            className="absolute left-2 top-2 h-5 bg-black/55 px-1.5 text-xs text-white/85 backdrop-blur-sm hover:bg-black/55"
           >
             {year}
           </Badge>
@@ -169,7 +169,7 @@ function PosterCardImpl(props: PosterCardProps) {
 
         {ratingNum > 0 && (
           <Badge
-            className="absolute right-2 top-2 h-5 bg-amber-400 px-1.5 text-[10px] font-bold text-black hover:bg-amber-400"
+            className="absolute right-2 top-2 h-5 bg-amber-400 px-1.5 text-xs font-bold text-black hover:bg-amber-400"
             variant="secondary"
           >
             {rating}
@@ -179,7 +179,7 @@ function PosterCardImpl(props: PosterCardProps) {
         {!ratingNum && episodes !== undefined && episodes > 1 && (
           <Badge
             variant="secondary"
-            className="absolute right-2 top-2 h-5 bg-black/55 px-1.5 text-[10px] text-white/85 backdrop-blur-sm hover:bg-black/55"
+            className="absolute right-2 top-2 h-5 bg-black/55 px-1.5 text-xs text-white/85 backdrop-blur-sm hover:bg-black/55"
           >
             {currentEpisode ? `${currentEpisode}/${episodes}` : `${episodes}集`}
           </Badge>
@@ -188,7 +188,7 @@ function PosterCardImpl(props: PosterCardProps) {
         {aggregateCount > 1 && (
           <Badge
             variant="secondary"
-            className="absolute bottom-2 left-2 h-5 gap-1 bg-black/55 px-1.5 text-[10px] text-white/85 backdrop-blur-sm hover:bg-black/55"
+            className="absolute bottom-2 left-2 h-5 gap-1 bg-black/55 px-1.5 text-xs text-white/85 backdrop-blur-sm hover:bg-black/55"
           >
             <Layers className="h-2.5 w-2.5" strokeWidth={2} />
             {aggregateCount}
@@ -205,7 +205,7 @@ function PosterCardImpl(props: PosterCardProps) {
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
           </button>
         )}
-      </div>
+      </Card>
 
       {variant === 'history' && (
         <div className="mt-2 h-0.5 w-full overflow-hidden rounded-full bg-muted">
@@ -220,9 +220,7 @@ function PosterCardImpl(props: PosterCardProps) {
         <h3 className="line-clamp-2 text-sm font-medium leading-snug transition-colors group-hover:text-primary">
           {title}
         </h3>
-        {showSource && (
-          <p className="truncate text-xs text-muted-foreground">{sourceName}</p>
-        )}
+        {showSource && <p className="truncate text-xs text-muted-foreground">{sourceName}</p>}
       </div>
     </div>
   );

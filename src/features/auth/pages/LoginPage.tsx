@@ -1,14 +1,14 @@
 import { Eye, EyeOff, Lock } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { wasPersisted } from '@/lib/auth';
-import { useLogin } from '../hooks/useLogin';
 import { useSite } from '@/lib/hooks/useSite';
+import { useLogin } from '../hooks/useLogin';
 
 export default function LoginPage() {
   const [password, setPassword] = useState('');
@@ -43,7 +43,7 @@ export default function LoginPage() {
       >
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
               <span className="text-xl font-bold">{siteName[0]?.toUpperCase()}</span>
             </div>
             <CardTitle className="text-xl">{siteName}</CardTitle>
@@ -97,9 +97,7 @@ export default function LoginPage() {
 
               {loginMutation.isError && (
                 <p className="text-center text-xs text-destructive" role="alert">
-                  {loginMutation.error instanceof Error
-                    ? loginMutation.error.message
-                    : '登录失败'}
+                  {loginMutation.error instanceof Error ? loginMutation.error.message : '登录失败'}
                 </p>
               )}
 

@@ -1,8 +1,7 @@
 import { ImageIcon } from 'lucide-react';
 import { useState } from 'react';
-import { processImageUrl } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn, processImageUrl } from '@/lib/utils';
 
 interface PosterImageProps {
   src: string;

@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { PlayRecord } from '@/lib/types';
+import { useEffect } from 'react';
 import { subscribeToDataUpdates } from '@/lib/db';
-import { playRecordsOptions } from '@/lib/query/options';
 import { queryKeys } from '@/lib/query/keys';
+import { playRecordsOptions } from '@/lib/query/options';
+import type { PlayRecord } from '@/lib/types';
 
 export function useHistory() {
   const queryClient = useQueryClient();

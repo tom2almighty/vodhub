@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { doubanCategoriesOptions } from '@/lib/query/options';
 import type { DoubanCategories } from '@/lib/api/douban';
+import { doubanCategoriesOptions } from '@/lib/query/options';
 
 const FALLBACK: DoubanCategories = {
   movie: ['全部', '华语', '欧美', '韩国', '日本'],

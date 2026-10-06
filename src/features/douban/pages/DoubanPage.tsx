@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef } from 'react';
 import { motion } from 'motion/react';
-import type { RecommendationItem } from '@/lib/types';
+import { useEffect, useMemo, useRef } from 'react';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterGrid } from '@/components/media/PosterGrid';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { RecommendationItem } from '@/lib/types';
 import { CategoryTabs, SubcategoryChips, useDoubanType } from '../components/CategoryTabs';
-import { useDoubanCategory } from '../hooks/useDoubanCategory';
 import { useDoubanCategories } from '../hooks/useDoubanCategories';
+import { useDoubanCategory } from '../hooks/useDoubanCategory';
 
 export default function DoubanPage() {
   const { kind, setKind, type, setType } = useDoubanType();

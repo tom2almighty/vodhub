@@ -1,18 +1,14 @@
+import type { MediaTimeUpdateEventDetail } from '@vidstack/react';
 import { ArrowLeft } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import type { MediaTimeUpdateEventDetail } from '@vidstack/react';
 import { Button } from '@/components/ui/button';
-import type { SearchResult } from '@/lib/types';
 import { fetchSourceDetail, type PlaySessionResponse } from '@/lib/api/sources';
-import {
-  generateStorageKey,
-  getAllPlayRecords,
-  savePlayRecord,
-} from '@/lib/db';
-import { VidstackPlayer } from '../components/VidstackPlayer';
+import { generateStorageKey, getAllPlayRecords, savePlayRecord } from '@/lib/db';
+import type { SearchResult } from '@/lib/types';
 import { PlaybackPanel } from '../components/PlaybackPanel';
+import { VidstackPlayer } from '../components/VidstackPlayer';
 
 const SESSION_KEY = 'vodhub_play_session';
 const PROGRESS_SAVE_INTERVAL_MS = 5000;
@@ -158,15 +154,12 @@ export default function PlayPage() {
 
   const handlePause = useCallback(() => persistProgress(true), [persistProgress]);
 
-  const handleCanPlay = useCallback(
-    (detail: { duration?: number }) => {
-      if (detail?.duration && Number.isFinite(detail.duration)) {
-        snapshotRef.current.total = detail.duration;
-      }
-      setSwitching(false);
-    },
-    [],
-  );
+  const handleCanPlay = useCallback((detail: { duration?: number }) => {
+    if (detail?.duration && Number.isFinite(detail.duration)) {
+      snapshotRef.current.total = detail.duration;
+    }
+    setSwitching(false);
+  }, []);
 
   const handleEnded = useCallback(() => {
     const total = snapshotRef.current.total || 0;
@@ -271,7 +264,7 @@ export default function PlayPage() {
     <div className="app-page">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div
-          className="relative overflow-hidden rounded-2xl border border-border bg-black shadow-lg"
+          className="relative overflow-hidden rounded-lg border border-border bg-black shadow-lg"
           style={{ aspectRatio: '16 / 9' }}
         >
           <div className="absolute inset-0 bg-black">

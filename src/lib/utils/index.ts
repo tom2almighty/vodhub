@@ -1,4 +1,4 @@
 export { cn } from './cn';
-export { processImageUrl } from './image';
+export { clamp, formatEpisodeLabel, formatTime, progressPct } from './format';
 export { stripDescriptionHtml } from './html';
-export { clamp, progressPct, formatEpisodeLabel, formatTime } from './format';
+export { processImageUrl } from './image';

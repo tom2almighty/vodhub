@@ -27,9 +27,7 @@ export function DetailMeta({
     <div>
       <h1 className="text-xl font-bold tracking-tight">{title}</h1>
       {currentEpisodeTitle && (
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          正在播放 · {currentEpisodeTitle}
-        </p>
+        <p className="mt-1.5 text-sm text-muted-foreground">正在播放 · {currentEpisodeTitle}</p>
       )}
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -45,9 +43,7 @@ export function DetailMeta({
           <div className="mt-5 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             简介
           </div>
-          <p className="whitespace-pre-line text-sm leading-7 text-foreground/90">
-            {cleanDesc}
-          </p>
+          <p className="whitespace-pre-line text-sm leading-7 text-foreground/90">{cleanDesc}</p>
         </>
       )}
     </div>

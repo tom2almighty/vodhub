@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DetailMeta } from './DetailMeta';
 
 interface SourceLike {
@@ -66,7 +66,7 @@ export function PlaybackPanel({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
       <Tabs defaultValue="episodes" className="flex h-full min-h-0 flex-col">
         <div className="border-b border-border p-2">
           <TabsList className="grid w-full grid-cols-3">
@@ -88,21 +88,17 @@ export function PlaybackPanel({
                   const active = episodeValue === i + 1;
                   const label = episodesTitles[i] || `${i + 1}`;
                   return (
-                    <button
+                    <Button
                       key={i}
                       type="button"
+                      size="sm"
+                      variant={active ? 'default' : 'secondary'}
                       onClick={() => onEpisodeChange(i + 1)}
                       title={label}
-                      data-active={active}
-                      className={cn(
-                        'flex h-9 min-w-0 items-center justify-center rounded-md border border-transparent px-1',
-                        'cursor-pointer text-xs font-medium tabular-nums transition-colors',
-                        'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                        'data-[active=true]:border-primary/30 data-[active=true]:bg-primary/15 data-[active=true]:text-foreground',
-                      )}
+                      className="h-9 min-w-0 px-1 text-xs tabular-nums"
                     >
                       <span className="block truncate">{label}</span>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -121,34 +117,28 @@ export function PlaybackPanel({
                   const isActive = activeKey === key;
                   const isLoading = pendingKey === key;
                   return (
-                    <button
+                    <Button
                       key={key}
                       type="button"
+                      size="sm"
+                      variant={isActive ? 'default' : 'secondary'}
                       onClick={() => handleSourceClick(src)}
                       disabled={isLoading}
                       title={src.source_name}
-                      data-active={isActive}
-                      className={cn(
-                        'flex h-10 min-w-0 items-center justify-center rounded-md border border-transparent px-2',
-                        'cursor-pointer text-xs font-medium transition-colors disabled:cursor-wait',
-                        'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                        'data-[active=true]:border-primary/30 data-[active=true]:bg-primary/15 data-[active=true]:text-foreground',
-                      )}
+                      className="h-10 min-w-0 px-2 text-xs"
                     >
                       {isLoading ? (
                         <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
                       ) : (
                         <span className="block truncate">{src.source_name}</span>
                       )}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
             </ScrollArea>
           ) : (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              无其他可用源
-            </div>
+            <div className="py-12 text-center text-sm text-muted-foreground">无其他可用源</div>
           )}
         </TabsContent>
 

@@ -1,40 +1,40 @@
 import { LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { BrandMark } from './BrandMark';
-import { NAV_LINKS } from './navLinks';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/features/auth/AuthContext';
 import { cn } from '@/lib/utils';
+import { BrandMark } from './BrandMark';
+import { NAV_LINKS } from './navLinks';
 
 /**
  * Segmented pill nav, modeled after the shadcn Tabs trigger style. Hidden on
  * small screens, where the bottom tab bar (BottomTabBar) takes over.
  */
 function NavLinks({ pathname }: { pathname: string }) {
+  const currentTab = NAV_LINKS.find((l) => l.match(pathname))?.href ?? '';
+
   return (
-    <div className="hidden h-9 items-center rounded-md bg-muted p-1 text-muted-foreground md:inline-flex">
-      {NAV_LINKS.map((l) => {
-        const Icon = l.icon;
-        const active = l.match(pathname);
-        return (
-          <Link
-            key={l.href}
-            to={l.href}
-            data-active={active}
-            aria-label={l.label}
-            className={cn(
-              'inline-flex h-7 items-center justify-center gap-1.5 whitespace-nowrap rounded-sm px-3 text-sm font-medium transition-all sm:px-5',
-              'cursor-pointer hover:text-foreground',
-              'data-[active=true]:bg-background data-[active=true]:text-foreground data-[active=true]:shadow-sm',
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" strokeWidth={2} />
-            <span>{l.label}</span>
-          </Link>
-        );
-      })}
+    <div className="hidden md:inline-flex">
+      <Tabs value={currentTab}>
+        <TabsList>
+          {NAV_LINKS.map((l) => {
+            const Icon = l.icon;
+            return (
+              <TabsTrigger
+                key={l.href}
+                value={l.href}
+                render={<Link to={l.href} aria-label={l.label} className="gap-1.5" />}
+              >
+                <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+                <span>{l.label}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
     </div>
   );
 }
@@ -42,13 +42,7 @@ function NavLinks({ pathname }: { pathname: string }) {
 function LogoutButton() {
   const { logout } = useAuth();
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      aria-label="退出登录"
-      title="退出登录"
-      onClick={logout}
-    >
+    <Button variant="ghost" size="icon" aria-label="退出登录" title="退出登录" onClick={logout}>
       <LogOut className="h-4 w-4" />
     </Button>
   );
@@ -75,7 +69,7 @@ export function Navbar() {
         'data-[scrolled=false]:bg-background/40 data-[scrolled=false]:backdrop-blur-sm',
       )}
     >
-      <div className="mx-auto flex h-14 w-full max-w-[88rem] items-center gap-3 px-4 md:px-10 lg:px-14">
+      <div className="app-container flex h-14 items-center gap-3 px-4 md:px-10 lg:px-14">
         <div className="flex min-w-0 flex-1 items-center gap-5">
           <BrandMark />
           <NavLinks pathname={location.pathname} />

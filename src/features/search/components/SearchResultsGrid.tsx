@@ -1,8 +1,12 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterGrid } from '@/components/media/PosterGrid';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { AggregatedItem } from '../lib/aggregate';
+
+const INITIAL_BATCH = 24;
+const BATCH_SIZE = 18;
 
 interface SearchResultsGridProps {
   items: AggregatedItem[];
@@ -11,9 +15,35 @@ interface SearchResultsGridProps {
 }
 
 export function SearchResultsGrid({ items, loading, query }: SearchResultsGridProps) {
+  const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset batch on query change
+  useEffect(() => {
+    setVisibleCount(INITIAL_BATCH);
+  }, [query]);
+
+  const hasMore = visibleCount < items.length;
+
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, items.length));
+        }
+      },
+      { rootMargin: '300px' },
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, items.length]);
+
+  const visibleItems = useMemo(() => items.slice(0, visibleCount), [items, visibleCount]);
+
   if (items.length === 0 && !loading) {
     return (
-      <div className="rounded-2xl border border-border bg-card py-20 text-center text-sm text-muted-foreground">
+      <div className="rounded-lg border border-border bg-card py-20 text-center text-sm text-muted-foreground">
         未找到相关内容
       </div>
     );
@@ -30,37 +60,40 @@ export function SearchResultsGrid({ items, loading, query }: SearchResultsGridPr
   }
 
   return (
-    <PosterGrid>
-      <AnimatePresence initial={false}>
-        {items.map((item, i) => {
-          const primary = item.group[0];
-          return (
-            <motion.div
-              key={item.key}
-              layout
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: Math.min(i, 12) * 0.02, duration: 0.25 }}
-            >
-              <PosterCard
-                variant="search"
-                title={item.title}
-                poster={item.poster}
-                year={item.year}
-                source={primary.source}
-                id={primary.id}
-                sourceName={primary.source_name}
-                sourceNames={item.group.map((g) => g.source_name)}
-                episodes={primary.episodes?.length || 0}
-                doubanId={item.douban_id}
-                candidates={item.group.length > 1 ? item.group : undefined}
-                query={query}
-              />
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-    </PosterGrid>
+    <>
+      <PosterGrid>
+        <AnimatePresence initial={false}>
+          {visibleItems.map((item, i) => {
+            const primary = item.group[0];
+            return (
+              <motion.div
+                key={item.key}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: Math.min(i, 12) * 0.02, duration: 0.25 }}
+              >
+                <PosterCard
+                  variant="search"
+                  title={item.title}
+                  poster={item.poster}
+                  year={item.year}
+                  source={primary.source}
+                  id={primary.id}
+                  sourceName={primary.source_name}
+                  sourceNames={item.group.map((g) => g.source_name)}
+                  episodes={primary.episodes?.length || 0}
+                  doubanId={item.douban_id}
+                  candidates={item.group.length > 1 ? item.group : undefined}
+                  query={query}
+                />
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </PosterGrid>
+      {hasMore && <div ref={sentinelRef} className="h-10 w-full" />}
+    </>
   );
 }

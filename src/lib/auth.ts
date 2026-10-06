@@ -13,11 +13,7 @@ function safeStorage(persistent: boolean): Storage | null {
 export function getAuthToken(): string {
   if (typeof window === 'undefined') return '';
   try {
-    return (
-      window.localStorage.getItem(TOKEN_KEY) ||
-      window.sessionStorage.getItem(TOKEN_KEY) ||
-      ''
-    );
+    return window.localStorage.getItem(TOKEN_KEY) || window.sessionStorage.getItem(TOKEN_KEY) || '';
   } catch {
     return '';
   }

@@ -4,7 +4,10 @@ type EventTarget =
   | Window
   | Document
   | HTMLElement
-  | { addEventListener: Window['addEventListener']; removeEventListener: Window['removeEventListener'] };
+  | {
+      addEventListener: Window['addEventListener'];
+      removeEventListener: Window['removeEventListener'];
+    };
 
 export function useEventListener<E extends Event = Event>(
   eventName: string,

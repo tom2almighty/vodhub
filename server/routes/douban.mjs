@@ -104,11 +104,9 @@ export async function recommendations(c) {
     fetchHot({ ...TV_TYPES.综合, limit: 18 }, RECOMMENDATIONS_TTL_MS),
     fetchHot({ ...SHOW_TYPES.综合, limit: 18 }, RECOMMENDATIONS_TTL_MS),
   ]);
-  return c.json(
-    { movies: movies.items, tvShows: tv.items, varietyShows: show.items },
-    200,
-    { 'Cache-Control': 'public, max-age=604800, s-maxage=604800' },
-  );
+  return c.json({ movies: movies.items, tvShows: tv.items, varietyShows: show.items }, 200, {
+    'Cache-Control': 'public, max-age=604800, s-maxage=604800',
+  });
 }
 
 export async function category(c) {

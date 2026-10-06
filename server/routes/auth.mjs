@@ -1,9 +1,4 @@
-import {
-  createAuthToken,
-  getAuthConfig,
-  isAuthorized,
-  passwordMatches,
-} from '../lib/auth.mjs';
+import { createAuthToken, getAuthConfig, isAuthorized, passwordMatches } from '../lib/auth.mjs';
 
 export async function login(c) {
   const env = c.env;

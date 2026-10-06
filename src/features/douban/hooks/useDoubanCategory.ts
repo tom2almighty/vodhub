@@ -1,13 +1,13 @@
 import {
-  useInfiniteQuery,
   type InfiniteData,
   type UseInfiniteQueryResult,
+  useInfiniteQuery,
 } from '@tanstack/react-query';
 import {
-  fetchDoubanCategory,
-  getDoubanCategoryCacheKey,
   type DoubanCategoryResult,
   type DoubanKind,
+  fetchDoubanCategory,
+  getDoubanCategoryCacheKey,
 } from '@/lib/api/douban';
 import { getCachedDoubanCategory, setCachedDoubanCategory } from '@/lib/db';
 import { queryKeys } from '@/lib/query/keys';

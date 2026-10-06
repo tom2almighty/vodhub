@@ -1,6 +1,9 @@
 import { authFetch } from '@/lib/auth';
 
-export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+export async function apiFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
   return authFetch(input, init);
 }
 

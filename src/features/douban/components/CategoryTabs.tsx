@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 import type { DoubanKind } from '@/lib/api/douban';
 
 export const DOUBAN_KINDS = ['movie', 'tv', 'show'] as const;
@@ -36,28 +36,19 @@ interface SubcategoryChipsProps {
   value: string;
   onChange: (next: string) => void;
 }
-
 export function SubcategoryChips({ options, value, onChange }: SubcategoryChipsProps) {
   return (
     <div className="flex flex-wrap gap-2">
-      {options.map((opt) => {
-        const active = opt === value;
-        return (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => onChange(opt)}
-            data-active={active}
-            className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-              'border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-              'data-[active=true]:border-primary/30 data-[active=true]:bg-primary/15 data-[active=true]:text-foreground',
-            )}
-          >
-            {opt}
-          </button>
-        );
-      })}
+      {options.map((opt) => (
+        <Badge
+          key={opt}
+          variant={opt === value ? 'default' : 'secondary'}
+          onClick={() => onChange(opt)}
+          className="cursor-pointer px-3 py-1 text-xs font-medium transition-colors"
+        >
+          {opt}
+        </Badge>
+      ))}
     </div>
   );
 }

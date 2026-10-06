@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 import { fetchRecommendations } from '@/lib/api/douban';
 import { setCachedRecommendations } from '@/lib/db';
 import type { RecommendationHomeResult } from '@/lib/types';

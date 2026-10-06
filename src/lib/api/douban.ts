@@ -22,12 +22,9 @@ export interface DoubanCategories {
 }
 
 export function getDoubanCategoryCacheKey(params: DoubanCategoryParams): string {
-  return [
-    params.kind,
-    params.type,
-    String(params.start ?? 0),
-    String(params.limit ?? 18),
-  ].join('|');
+  return [params.kind, params.type, String(params.start ?? 0), String(params.limit ?? 18)].join(
+    '|',
+  );
 }
 
 export async function fetchDoubanCategory(
@@ -47,6 +44,8 @@ export async function fetchDoubanCategories(signal?: AbortSignal): Promise<Douba
   return apiJson<DoubanCategories>('/api/douban/categories', { signal });
 }
 
-export async function fetchRecommendations(signal?: AbortSignal): Promise<RecommendationHomeResult> {
+export async function fetchRecommendations(
+  signal?: AbortSignal,
+): Promise<RecommendationHomeResult> {
   return apiJson<RecommendationHomeResult>('/api/recommendations', { signal });
 }

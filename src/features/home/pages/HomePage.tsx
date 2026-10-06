@@ -1,6 +1,6 @@
-import { useRecommendations } from '../hooks/useRecommendations';
-import { RecommendationSection } from '../components/RecommendationSection';
 import { Announcement } from '../components/Announcement';
+import { RecommendationSection } from '../components/RecommendationSection';
+import { useRecommendations } from '../hooks/useRecommendations';
 
 export default function HomePage() {
   const recQuery = useRecommendations();

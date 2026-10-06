@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { addSearchHistory } from '@/lib/db';
 import { SearchBar } from '../components/SearchBar';
+import { SearchHistoryChips } from '../components/SearchHistoryChips';
 import { SearchProgress } from '../components/SearchProgress';
 import { SearchResultsGrid } from '../components/SearchResultsGrid';
-import { SearchHistoryChips } from '../components/SearchHistoryChips';
 import { useSearchStream } from '../hooks/useSearchStream';
 import { aggregateResults } from '../lib/aggregate';
 

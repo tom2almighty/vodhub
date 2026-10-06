@@ -1,9 +1,9 @@
 import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { RecommendationItem } from '@/lib/types';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterRow } from '@/components/media/PosterRow';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { RecommendationItem } from '@/lib/types';
 
 interface RecommendationSectionProps {
   label: string;

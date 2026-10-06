@@ -1,5 +1,5 @@
+import { type UseQueryResult, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { getSearchHistory, subscribeToDataUpdates } from '@/lib/db';
 import { queryKeys } from '@/lib/query/keys';
 

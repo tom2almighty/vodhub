@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { clearSearchHistory, deleteSearchHistory } from '@/lib/db';
 import { useSearchHistory } from '../hooks/useSearchHistory';
@@ -26,30 +27,37 @@ export function SearchHistoryChips({ onPick }: SearchHistoryChipsProps) {
         )}
       </div>
       {history.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border border-border bg-card py-12 text-center text-sm text-muted-foreground">
           暂无搜索历史
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           {history.map((item) => (
-            <div key={item} className="group relative">
+            <Badge
+              key={item}
+              variant="secondary"
+              onClick={() => onPick(item)}
+              className="cursor-pointer gap-1.5 px-3 py-1 text-sm font-normal hover:bg-accent hover:text-foreground"
+            >
+              <span>{item}</span>
               <button
-                onClick={() => onPick(item)}
-                className="rounded-full border border-transparent bg-secondary px-4 py-1.5 text-sm transition-colors hover:border-primary/20 hover:bg-accent hover:text-primary"
-              >
-                {item}
-              </button>
-              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   deleteSearchHistory(item);
                 }}
-                className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-popover text-muted-foreground opacity-0 shadow transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    deleteSearchHistory(item);
+                  }
+                }}
+                className="rounded-full p-0.5 text-muted-foreground opacity-60 transition-opacity hover:bg-destructive hover:text-destructive-foreground hover:opacity-100"
                 aria-label="删除"
               >
-                <X className="h-2.5 w-2.5" strokeWidth={2} />
+                <X className="h-3 w-3" />
               </button>
-            </div>
+            </Badge>
           ))}
         </div>
       )}

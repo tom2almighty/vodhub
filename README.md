@@ -6,13 +6,13 @@ Mac CMS 聚合，基于 React + Vite + [@ouonnki/cms-core](https://www.npmjs.com
 
 先在目标平台配置环境变量，再部署。至少需要 `ADMIN_PASSWORD`、`AUTH_SECRET`，以及 `SOURCES_URL` 或 `SOURCES_JSON` 其中一个。
 
-| 平台 | 推荐方式 | 部署说明 |
-| --- | --- | --- |
-| Vercel | 从 Git 仓库导入 | Framework Preset 选择 Vite，Build Command 使用 `pnpm build`，Output Directory 使用 `dist`。配置环境变量后直接部署。 |
-| Cloudflare Pages | 从 Git 仓库连接 Pages | Build Command 使用 `pnpm build`，Build Output Directory 使用 `dist`。在 Pages 的环境变量里配置必填项。 |
-| Netlify | 从 Git 仓库导入 | Build Command 使用 `pnpm build`，Publish Directory 使用 `dist`。`netlify.toml` 已包含 API 与 SPA 回退配置。 |
-| Docker Compose | 服务器自托管 | 修改 `compose.yaml` 里的环境变量，然后执行 `docker compose up -d`。默认访问端口为 `3000`。 |
-| 本地开发 | 本机运行 | 执行 `pnpm install`，复制并配置本地环境变量后运行 `pnpm dev`，默认访问 `http://localhost:3000`。 |
+| 平台             | 推荐方式              | 部署说明                                                                                                            |
+| ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Vercel           | 从 Git 仓库导入       | Framework Preset 选择 Vite，Build Command 使用 `pnpm build`，Output Directory 使用 `dist`。配置环境变量后直接部署。 |
+| Cloudflare Pages | 从 Git 仓库连接 Pages | Build Command 使用 `pnpm build`，Build Output Directory 使用 `dist`。在 Pages 的环境变量里配置必填项。              |
+| Netlify          | 从 Git 仓库导入       | Build Command 使用 `pnpm build`，Publish Directory 使用 `dist`。`netlify.toml` 已包含 API 与 SPA 回退配置。         |
+| Docker Compose   | 服务器自托管          | 修改 `compose.yaml` 里的环境变量，然后执行 `docker compose up -d`。默认访问端口为 `3000`。                          |
+| 本地开发         | 本机运行              | 执行 `pnpm install`，复制并配置本地环境变量后运行 `pnpm dev`，默认访问 `http://localhost:3000`。                    |
 
 Cloudflare Pages 也可以用 Wrangler 手动部署：
 

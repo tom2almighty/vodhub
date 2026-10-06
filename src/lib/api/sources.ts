@@ -43,7 +43,10 @@ export interface SearchStreamCallbacks {
 
 // ===== search =====
 
-export async function searchAllSources(query: string, signal?: AbortSignal): Promise<SearchResult[]> {
+export async function searchAllSources(
+  query: string,
+  signal?: AbortSignal,
+): Promise<SearchResult[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
   const data = await apiJson<{ items?: SearchResult[] }>(

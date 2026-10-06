@@ -1,9 +1,11 @@
-name: CI & Docker
+name: CI & Release
 
 on:
   workflow_dispatch:
   push:
     branches: [main, master]
+    tags:
+      - "v*"
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -17,27 +19,26 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   packages: write
-  id-token: write       # cosign keyless OIDC
-  attestations: write   # SLSA provenance
+  id-token: write # cosign keyless OIDC
+  attestations: write # SLSA provenance
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
   # ───────────────────────────────────────────────────────────────
-  # Job 1 — type-check + frontend build verification.
-  # Runs on every push and PR; the docker job depends on it,
-  # so a typecheck/build failure short-circuits the whole pipeline.
+  # Job 1 — 代码质量与构建检查
+  # 触发条件：推送至 main 分支（已排除文档等无关改动）或发起 PR。
   # ───────────────────────────────────────────────────────────────
   verify:
-    name: Type-check & build
+    name: Code verification
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -45,13 +46,16 @@ jobs:
           version: 9.15.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Check code (Biome)
+        run: pnpm check
 
       - name: Type-check
         run: pnpm typecheck
@@ -60,22 +64,64 @@ jobs:
         run: pnpm build
 
   # ───────────────────────────────────────────────────────────────
-  # Job 2 — multi-arch Docker build, push, sign.
-  # Skipped on PRs (no registry pollution from forks).
-  # Only runs on main/master so :latest is always the default branch.
+  # Job 2 — 发布 GitHub Release（前端编译产物 zip，供直接部署 SaaS）
+  # 触发条件：推送 vx.y.z 格式的 Git Tag。
   # ───────────────────────────────────────────────────────────────
-  docker:
-    name: Docker build, push, sign
+  release:
+    name: Publish GitHub Release
     needs: verify
-    if: >-
-      github.event_name != 'pull_request' &&
-      contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref)
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend SPA
+        run: pnpm build
+
+      - name: Package dist artifact
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          cd dist && zip -r "../vodhub-dist-${TAG}.zip" . && cd ..
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" \
+            "vodhub-dist-${TAG}.zip" \
+            --title "$TAG" \
+            --generate-notes
+
+  # ───────────────────────────────────────────────────────────────
+  # Job 3 — 多架构 Docker 镜像构建、推送 GHCR 与 Cosign 签名
+  # 触发条件：推送 vx.y.z 格式的 Git Tag（或手动触发）。
+  # ───────────────────────────────────────────────────────────────
+  docker:
+    name: Docker build & push
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
 
       - name: Compute lowercase image name
         id: img
@@ -90,6 +136,7 @@ jobs:
         with:
           images: ${{ steps.img.outputs.name }}
           tags: |
+            type=ref,event=tag
             type=raw,value=latest
 
       - name: Set up QEMU
@@ -109,7 +156,7 @@ jobs:
 
       - name: Build and push (multi-arch)
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -129,8 +176,6 @@ jobs:
         env:
           IMAGE: ${{ steps.img.outputs.name }}
           DIGEST: ${{ steps.build.outputs.digest }}
-        # Sign by digest — covers the multi-arch manifest, so all
-        # platform-specific images under it inherit the signature.
         run: cosign sign --yes "${IMAGE}@${DIGEST}"
 
       - name: Inspect manifest

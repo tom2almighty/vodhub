@@ -1,26 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
-import Hls from 'hls.js';
-import { ShieldBan } from 'lucide-react';
+import { createHlsLoaderClass, createM3u8Processor } from '@ouonnki/cms-core/m3u8';
 import {
-  MediaPlayer,
-  MediaProvider,
-  Menu,
   isHLSProvider,
   type MediaCanPlayDetail,
+  MediaPlayer,
   type MediaPlayerInstance,
+  MediaProvider,
   type MediaProviderAdapter,
   type MediaTimeUpdateEventDetail,
 } from '@vidstack/react';
 import {
-  DefaultMenuButton,
+  type DefaultLayoutTranslations,
   DefaultMenuCheckbox,
   DefaultMenuItem,
-  DefaultMenuSection,
   DefaultVideoLayout,
   defaultLayoutIcons,
-  type DefaultLayoutTranslations,
 } from '@vidstack/react/player/layouts/default';
-import { createHlsLoaderClass, createM3u8Processor } from '@ouonnki/cms-core/m3u8';
+import Hls from 'hls.js';
+import { useEffect, useRef, useState } from 'react';
 import { processImageUrl } from '@/lib/utils';
 import '@vidstack/react/player/styles/default/theme.css';
 import '@vidstack/react/player/styles/default/layouts/video.css';
@@ -90,8 +86,6 @@ const ZH_CN: DefaultLayoutTranslations = {
 // to the provider below.
 const adProcessor = createM3u8Processor({ filterAds: true });
 const AdFilterLoader = createHlsLoaderClass({ m3u8Processor: adProcessor, Hls });
-const AD_FILTER_DESCRIPTION =
-  '过滤 m3u8 中以 #EXT-X-DISCONTINUITY 标记的广告切片。个别源可能无效，或导致片段跳过。';
 
 export interface VidstackPlayerProps {
   src: string;
@@ -143,7 +137,7 @@ export function VidstackPlayer({
     if (video) {
       video.style.transform = mirror ? 'scaleX(-1)' : '';
     }
-  }, [mirror, src]);
+  }, [mirror]);
 
   // Use the bundled hls.js (avoids vidstack's CDN fetch) and, when enabled,
   // route manifests through the ad-filtering loader.
@@ -237,7 +231,7 @@ export function VidstackPlayer({
           onToggleAdFilter
             ? {
                 settingsMenuItemsEnd: (
-                  <AdFilterMenu enabled={adFilterEnabled} onToggle={onToggleAdFilter} />
+                  <AdFilterItem enabled={Boolean(adFilterEnabled)} onToggle={onToggleAdFilter} />
                 ),
               }
             : undefined
@@ -247,46 +241,21 @@ export function VidstackPlayer({
   );
 }
 
-interface AdFilterMenuProps {
+interface AdFilterItemProps {
   enabled: boolean;
   onToggle: () => void;
 }
 
-function AdFilterMenu({ enabled, onToggle }: AdFilterMenuProps) {
-  const ignoredInitialChange = useRef(false);
-
-  const handleChange = (checked: boolean) => {
-    if (!ignoredInitialChange.current) {
-      ignoredInitialChange.current = true;
-      return;
-    }
-    if (checked !== enabled) onToggle();
-  };
-
+function AdFilterItem({ enabled, onToggle }: AdFilterItemProps) {
   return (
-    <Menu.Root className="vds-ad-filter-menu vds-menu">
-      <DefaultMenuButton label="去广告" hint={enabled ? '已开启' : '已关闭'} Icon={ShieldBan} />
-      <Menu.Items className="vds-menu-items">
-        <DefaultMenuSection>
-          <div
-            style={{
-              color: 'var(--text-hint-color)',
-              fontSize: 'var(--media-menu-hint-font-size, 13px)',
-              lineHeight: 1.5,
-              padding: '8px 10px 6px',
-            }}
-          >
-            {AD_FILTER_DESCRIPTION}
-          </div>
-          <DefaultMenuItem label="过滤广告切片">
-            <DefaultMenuCheckbox
-              label="过滤广告切片"
-              checked={enabled}
-              onChange={handleChange}
-            />
-          </DefaultMenuItem>
-        </DefaultMenuSection>
-      </Menu.Items>
-    </Menu.Root>
+    <DefaultMenuItem label="过滤广告切片">
+      <DefaultMenuCheckbox
+        label="过滤广告切片"
+        checked={enabled}
+        onChange={(checked) => {
+          if (checked !== enabled) onToggle();
+        }}
+      />
+    </DefaultMenuItem>
   );
 }

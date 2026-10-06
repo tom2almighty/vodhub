@@ -36,7 +36,10 @@ function normalize(raw) {
 
 function parse(raw) {
   try {
-    const cleaned = String(raw || '').replace(/^\s*['"`]/, '').replace(/['"`]\s*$/, '').trim();
+    const cleaned = String(raw || '')
+      .replace(/^\s*['"`]/, '')
+      .replace(/['"`]\s*$/, '')
+      .trim();
     const data = JSON.parse(cleaned);
     return normalize(Array.isArray(data) ? data : [data]);
   } catch {

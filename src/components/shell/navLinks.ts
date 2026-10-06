@@ -1,5 +1,5 @@
-import { Clock, Compass, Home as HomeIcon, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Clock, Compass, Home as HomeIcon, Search } from 'lucide-react';
 
 export interface NavLink {
   label: string;

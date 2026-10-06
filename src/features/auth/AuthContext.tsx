@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { verify } from '@/lib/api/auth';
+import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth';
 import { queryClient } from '@/lib/query/client';
 import { queryKeys } from '@/lib/query/keys';
 

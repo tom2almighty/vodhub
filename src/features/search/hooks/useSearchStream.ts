@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { SearchResult } from '@/lib/types';
 import { searchStream } from '@/lib/api/sources';
+import type { SearchResult } from '@/lib/types';
 
 export type SearchStatus = 'idle' | 'loading' | 'done' | 'error';
 

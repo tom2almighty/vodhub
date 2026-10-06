@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
-import { NAV_LINKS } from './navLinks';
 import { cn } from '@/lib/utils';
+import { NAV_LINKS } from './navLinks';
 
 /**
  * Mobile-only bottom tab bar (iOS-style). Shows icon + label for each primary
@@ -30,8 +30,8 @@ export function BottomTabBar() {
                 aria-current={active ? 'page' : undefined}
                 data-active={active}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius)] py-1.5',
-                  'text-[11px] font-medium leading-none transition-colors',
+                  'flex flex-col items-center justify-center gap-0.5 rounded-md py-1.5',
+                  'text-xs font-medium leading-none transition-colors',
                   'text-muted-foreground hover:text-foreground',
                   'data-[active=true]:bg-accent data-[active=true]:text-accent-foreground',
                 )}

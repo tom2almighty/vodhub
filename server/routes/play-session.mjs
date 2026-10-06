@@ -1,5 +1,5 @@
-import { findSource } from '../lib/sources.mjs';
 import { normalizeYear } from '../lib/cms.mjs';
+import { findSource } from '../lib/sources.mjs';
 import { fetchDetail } from './detail.mjs';
 import { aggregate } from './search.mjs';
 
@@ -42,14 +42,16 @@ async function resolveCandidates(payload, env) {
     const id = String(payload.id || '');
     if (!source || !id) throw new Error('缺少 source 或 id');
     const src = await findSource(env, source);
-    return [emptyResult({
-      id,
-      title: String(payload.title || ''),
-      poster: String(payload.poster || ''),
-      source,
-      source_name: String(payload.source_name || src?.name || source),
-      year: normalizeYear(payload.year),
-    })];
+    return [
+      emptyResult({
+        id,
+        title: String(payload.title || ''),
+        poster: String(payload.poster || ''),
+        source,
+        source_name: String(payload.source_name || src?.name || source),
+        year: normalizeYear(payload.year),
+      }),
+    ];
   }
 
   if (mode === 'search') {
@@ -81,8 +83,9 @@ export async function playSession(c) {
   const currentSource = useChoice ? preferredSource : candidates[0].source;
   const currentId = useChoice ? preferredId : candidates[0].id;
 
-  const chosen = candidates.find((cand) => cand.source === currentSource && cand.id === currentId)
-    || candidates[0];
+  const chosen =
+    candidates.find((cand) => cand.source === currentSource && cand.id === currentId) ||
+    candidates[0];
 
   let detail;
   if (chosen.episodes?.length) {

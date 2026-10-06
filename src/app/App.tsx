@@ -1,11 +1,11 @@
-import { lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BackToTop } from '@/components/shell/BackToTop';
+import { BottomTabBar } from '@/components/shell/BottomTabBar';
+import { Navbar } from '@/components/shell/Navbar';
 import { BareLayout } from './layouts/BareLayout';
 import { ProtectedLayout } from './layouts/ProtectedLayout';
-import { Navbar } from '@/components/shell/Navbar';
-import { BottomTabBar } from '@/components/shell/BottomTabBar';
-import { BackToTop } from '@/components/shell/BackToTop';
 
 const HomePage = lazy(() => import('@/features/home/pages/HomePage'));
 const HistoryPage = lazy(() => import('@/features/home/pages/HistoryPage'));
@@ -16,7 +16,7 @@ const PlayPage = lazy(() => import('@/features/play/pages/PlayPage'));
 
 function Loading() {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
+    <div className="flex min-h-96 items-center justify-center">
       <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
     </div>
   );
