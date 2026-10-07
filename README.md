@@ -23,21 +23,21 @@ npx wrangler pages deploy dist
 
 ## 环境变量
 
-| 变量                      | 必填   | 说明                                             |
-| ------------------------- | ------ | ------------------------------------------------ |
-| `SITE_NAME`               | 否     | 站点名称，默认 `vodhub`                          |
-| `SITE_ANNOUNCEMENT`       | 否     | 站点公告内容，登录后首页顶部展示（留空则不显示） |
-| `SITE_ANNOUNCEMENT_TITLE` | 否     | 站点公告标题（可选，配合 `SITE_ANNOUNCEMENT`）   |
-| `ADMIN_PASSWORD`          | 是     | 站点登录密码                                     |
-| `AUTH_SECRET`             | 是     | 登录 token 签名密钥（建议 32+ 字符随机串）       |
-| `AUTH_TOKEN_TTL`          | 否     | token 有效期（秒），默认 604800                  |
-| `SOURCES_URL`             | 二选一 | 视频源订阅地址（JSON）                           |
-| `SOURCES_JSON`            | 二选一 | 视频源 JSON 内联配置                             |
-| `SEARCH_CONCURRENCY`      | 否     | CMS 聚合搜索并发数，默认 5，上限 20              |
-| `IMAGE_PROXY_ALLOWED_HOSTS` | 否   | 图片代理额外放行的域名，逗号分隔（默认仅豆瓣域） |
-| `SOURCES_CACHE_TTL_MS`    | 否     | 视频源配置缓存时长（毫秒），默认 300000          |
-| `SOURCES_RETRY_MS`        | 否     | 源加载失败后的重试间隔（毫秒），默认 15000       |
-| `SOURCES_FETCH_TIMEOUT_MS` | 否    | 拉取视频源配置的超时（毫秒），默认 15000         |
+| 变量                        | 必填   | 说明                                             |
+| --------------------------- | ------ | ------------------------------------------------ |
+| `SITE_NAME`                 | 否     | 站点名称，默认 `vodhub`                          |
+| `SITE_ANNOUNCEMENT`         | 否     | 站点公告内容，登录后首页顶部展示（留空则不显示） |
+| `SITE_ANNOUNCEMENT_TITLE`   | 否     | 站点公告标题（可选，配合 `SITE_ANNOUNCEMENT`）   |
+| `ADMIN_PASSWORD`            | 是     | 站点登录密码                                     |
+| `AUTH_SECRET`               | 是     | 登录 token 签名密钥（建议 32+ 字符随机串）       |
+| `AUTH_TOKEN_TTL`            | 否     | token 有效期（秒），默认 604800                  |
+| `SOURCES_URL`               | 二选一 | 视频源订阅地址（JSON）                           |
+| `SOURCES_JSON`              | 二选一 | 视频源 JSON 内联配置                             |
+| `SEARCH_CONCURRENCY`        | 否     | CMS 聚合搜索并发数，默认 5，上限 20              |
+| `IMAGE_PROXY_ALLOWED_HOSTS` | 否     | 图片代理额外放行的域名，逗号分隔（默认仅豆瓣域） |
+| `SOURCES_CACHE_TTL_MS`      | 否     | 视频源配置缓存时长（毫秒），默认 300000          |
+| `SOURCES_RETRY_MS`          | 否     | 源加载失败后的重试间隔（毫秒），默认 15000       |
+| `SOURCES_FETCH_TIMEOUT_MS`  | 否     | 拉取视频源配置的超时（毫秒），默认 15000         |
 
 ## 视频源配置
 
@@ -71,4 +71,4 @@ npx wrangler pages deploy dist
 
 ## License
 
-[CC BY-NC-SA](./LICENSE)
+[AGPL-3.0](LICENSE)
