@@ -111,24 +111,36 @@ export async function searchStream(
   const decoder = new TextDecoder();
   let buffer = '';
   let completed = false;
+  let resultCount = 0;
+  let lastCompletedSources = 0;
+  let streamError: Error | null = null;
 
   const handleLine = (line: string) => {
     if (!line.trim()) return;
-    const event = JSON.parse(line) as StreamEvent;
+    let event: StreamEvent;
+    try {
+      event = JSON.parse(line) as StreamEvent;
+    } catch {
+      return; // a malformed line must not abort an otherwise healthy stream
+    }
     if (event.type === 'start') cb.onStart(event.totalSources || 0);
-    else if (event.type === 'result')
+    else if (event.type === 'result') {
+      resultCount += event.items?.length || 0;
       cb.onResult(event.items || [], event.sourceKey || '', event.sourceName || '');
-    else if (event.type === 'progress') cb.onProgress(event.completed || 0, event.total || 0);
-    else if (event.type === 'complete') {
+    } else if (event.type === 'progress') {
+      lastCompletedSources = event.completed || 0;
+      cb.onProgress(event.completed || 0, event.total || 0);
+    } else if (event.type === 'complete') {
       completed = true;
-      cb.onComplete(event.totalResults || 0, event.completedSources || 0);
+      if (event.completedSources != null) lastCompletedSources = event.completedSources;
+      cb.onComplete(event.totalResults ?? resultCount, lastCompletedSources);
     } else if (event.type === 'error') {
-      throw new Error(event.message || '搜索失败');
+      streamError = new Error(event.message || '搜索失败');
     }
   };
 
   try {
-    while (true) {
+    while (!streamError) {
       if (signal?.aborted) {
         await reader.cancel().catch(() => undefined);
         return;
@@ -138,11 +150,26 @@ export async function searchStream(
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
-      for (const line of lines) handleLine(line);
+      for (const line of lines) {
+        handleLine(line);
+        if (streamError) break;
+      }
     }
+
+    if (streamError) {
+      // Release the connection before surfacing the failure. Results already
+      // delivered are kept — they are still valid.
+      await reader.cancel().catch(() => undefined);
+      throw streamError;
+    }
+
     buffer += decoder.decode();
     if (buffer) handleLine(buffer);
-    if (!completed) cb.onComplete(0, 0);
+
+    // A stream that ends without a `complete` event (proxy truncation, early
+    // close) still has to finish the caller's state machine. Reporting 0/0 here
+    // used to snap the progress UI back to zero, so report what we actually saw.
+    if (!completed) cb.onComplete(resultCount, lastCompletedSources);
   } catch (err) {
     if ((err as Error)?.name === 'AbortError') return;
     throw err;

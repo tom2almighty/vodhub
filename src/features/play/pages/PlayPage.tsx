@@ -1,6 +1,6 @@
 import type { MediaTimeUpdateEventDetail } from '@vidstack/react';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,13 @@ import { fetchSourceDetail, type PlaySessionResponse } from '@/lib/api/sources';
 import { generateStorageKey, getAllPlayRecords, savePlayRecord } from '@/lib/db';
 import type { SearchResult } from '@/lib/types';
 import { PlaybackPanel } from '../components/PlaybackPanel';
-import { VidstackPlayer } from '../components/VidstackPlayer';
+
+// The player pulls in hls.js and the whole vidstack stack (several hundred kB).
+// It only matters once a stream URL is known, so keep it out of the initial
+// chunk — the type-only import above is erased and costs nothing.
+const VidstackPlayer = lazy(() =>
+  import('../components/VidstackPlayer').then((m) => ({ default: m.VidstackPlayer })),
+);
 
 const SESSION_KEY = 'vodhub_play_session';
 const PROGRESS_SAVE_INTERVAL_MS = 5000;
@@ -20,6 +26,15 @@ interface SnapshotState {
   index: number;
   time: number;
   total: number;
+}
+
+/** Shown while the lazily-loaded player chunk is being fetched. */
+function PlayerLoading() {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-black">
+      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+    </div>
+  );
 }
 
 export default function PlayPage() {
@@ -42,6 +57,10 @@ export default function PlayPage() {
   const snapshotRef = useRef<SnapshotState>({ source: '', id: '', index: 0, time: 0, total: 0 });
   const lastSaveRef = useRef(0);
   const metaRef = useRef({ title: '', year: '', detail: null as SearchResult | null });
+  // Guards source switching: `seq` lets a late response detect that it has been
+  // superseded, and the controller cancels the request outright.
+  const switchSeqRef = useRef(0);
+  const switchAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     metaRef.current = { title, year, detail };
@@ -139,6 +158,7 @@ export default function PlayPage() {
       window.removeEventListener('beforeunload', handler);
       window.removeEventListener('pagehide', handler);
       persistProgress(true);
+      switchAbortRef.current?.abort();
     };
   }, [persistProgress]);
 
@@ -199,10 +219,20 @@ export default function PlayPage() {
       if (newSource === currentSource && newId === currentId) return;
       persistProgress(true);
       const carryOverTime = snapshotRef.current.time;
+
+      // Cancel any in-flight switch first: without this, clicking a second
+      // source used to leave both requests racing and whichever landed last
+      // won, so you could end up on the source you did not pick.
+      switchAbortRef.current?.abort();
+      const controller = new AbortController();
+      switchAbortRef.current = controller;
+      const seq = switchSeqRef.current + 1;
+      switchSeqRef.current = seq;
+
       setSwitchingText('切换中');
       setSwitching(true);
       try {
-        const nd = await fetchSourceDetail(newSource, newId);
+        const nd = await fetchSourceDetail(newSource, newId, controller.signal);
         let resumeTime = carryOverTime;
         let resumeIndex = 0;
         try {
@@ -217,6 +247,9 @@ export default function PlayPage() {
         } catch {
           /* ignore */
         }
+
+        if (seq !== switchSeqRef.current) return; // superseded by a newer switch
+
         setDetail(nd);
         setTitle(nd.title || title);
         setCover(nd.poster);
@@ -224,10 +257,15 @@ export default function PlayPage() {
         setCurrentId(newId);
         setStartTime(resumeTime);
         setEpisodeIndex(resumeIndex);
+        // With no episodes the player never mounts, so onCanPlay would never
+        // fire and the overlay would stay up forever.
+        if (!nd.episodes?.length) setSwitching(false);
         toast.success('已切换播放源');
       } catch (err) {
+        if (seq !== switchSeqRef.current) return;
         setSwitching(false);
-        toast.error('切换失败');
+        if ((err as Error)?.name !== 'AbortError') toast.error('切换失败');
+        // Re-thrown so PlaybackPanel can clear its pending spinner.
         throw err;
       }
     },
@@ -267,20 +305,22 @@ export default function PlayPage() {
         >
           <div className="absolute inset-0 bg-black">
             {videoUrl && (
-              <VidstackPlayer
-                key={playerKey}
-                src={videoUrl}
-                poster={cover}
-                startTime={startTime}
-                title={title}
-                adFilterEnabled={adFilter}
-                onToggleAdFilter={handleToggleAdFilter}
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={handleEnded}
-                onCanPlay={handleCanPlay}
-                onPause={handlePause}
-                onError={(err) => console.error('player error', err)}
-              />
+              <Suspense fallback={<PlayerLoading />}>
+                <VidstackPlayer
+                  key={playerKey}
+                  src={videoUrl}
+                  poster={cover}
+                  startTime={startTime}
+                  title={title}
+                  adFilterEnabled={adFilter}
+                  onToggleAdFilter={handleToggleAdFilter}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleEnded}
+                  onCanPlay={handleCanPlay}
+                  onPause={handlePause}
+                  onError={(err) => console.error('播放器错误', err)}
+                />
+              </Suspense>
             )}
           </div>
           {switching && (

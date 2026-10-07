@@ -53,6 +53,9 @@ export function PlaybackPanel({
   }, [pendingKey, currentKey]);
 
   const activeKey = pendingKey ?? currentKey;
+  // While one switch is in flight every button is disabled: allowing a second
+  // click used to leave two requests racing for the same piece of state.
+  const isSwitching = pendingKey !== null;
 
   const handleSourceClick = async (src: SourceLike) => {
     const key = `${src.source}+${src.id}`;
@@ -123,7 +126,7 @@ export function PlaybackPanel({
                       size="sm"
                       variant={isActive ? 'default' : 'secondary'}
                       onClick={() => handleSourceClick(src)}
-                      disabled={isLoading}
+                      disabled={isSwitching}
                       title={src.source_name}
                       className="h-10 min-w-0 px-2 text-xs"
                     >
