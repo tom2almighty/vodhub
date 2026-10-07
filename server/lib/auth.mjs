@@ -61,8 +61,12 @@ export async function createAuthToken(env) {
 
 async function verifyAuthToken(token, env) {
   const { authSecret } = getConfig(env);
-  if (!authSecret || !token?.includes('.')) return false;
-  const [body, sig] = token.split('.');
+  if (!authSecret || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  // Exactly two segments — reject anything with extra dots rather than silently
+  // trusting the first two.
+  if (parts.length !== 2) return false;
+  const [body, sig] = parts;
   if (!body || !sig) return false;
   const expected = await hmacSign(body, authSecret);
   if (!constantTimeEqual(sig, expected)) return false;

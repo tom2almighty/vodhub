@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { HTTPException } from 'hono/http-exception';
 import { isAuthorized } from './lib/auth.mjs';
 import * as auth from './routes/auth.mjs';
 import * as detail from './routes/detail.mjs';
@@ -20,6 +21,7 @@ export function createApp() {
       origin: '*',
       allowMethods: ['GET', 'POST', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization'],
+      maxAge: 86400,
     }),
   );
 
@@ -29,7 +31,12 @@ export function createApp() {
     if (!(await isAuthorized(c.req.raw, c.env))) {
       return c.json({ error: '未登录或登录已过期' }, 401);
     }
-    return next();
+    await next();
+    // Authenticated payloads must never be stored by a shared cache. Routes that
+    // set their own directive (image proxy, Douban) win.
+    if (!c.res.headers.has('Cache-Control')) {
+      c.header('Cache-Control', 'private, no-store');
+    }
   });
 
   app.post('/auth/login', auth.login);
@@ -46,8 +53,12 @@ export function createApp() {
   app.get('/image', image.imageProxy);
 
   app.onError((err, c) => {
+    // Framework-raised responses (404/405, malformed request, ...) must pass
+    // through untouched instead of being flattened into a 500.
+    if (err instanceof HTTPException) return err.getResponse();
     console.error('api error:', err);
-    return c.json({ error: err instanceof Error ? err.message : '服务器错误' }, 500);
+    // Never return upstream/internal error text to the client.
+    return c.json({ error: '服务器内部错误' }, 500);
   });
 
   return app;
