@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterRow } from '@/components/media/PosterRow';
+import { Empty, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { RecommendationItem } from '@/lib/types';
 
@@ -32,17 +33,19 @@ export function RecommendationSection({
       {loading ? (
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[2/3] w-32 shrink-0 sm:w-44" />
+            <Skeleton key={i} className="aspect-2/3 w-32 shrink-0 sm:w-44" />
           ))}
         </div>
       ) : items.length === 0 ? (
         // Skeletons used to show whenever the list was empty, so a successful
         // but empty response left the row "loading" forever.
-        <div className="rounded-lg border border-border bg-card py-12 text-center text-sm text-muted-foreground">
-          暂无内容
-        </div>
+        <Empty className="border border-border bg-card py-12">
+          <EmptyHeader>
+            <EmptyTitle>暂无内容</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       ) : (
-        <PosterRow>
+        <PosterRow label={label}>
           {items.map((item) => (
             <PosterCard
               key={item.id}

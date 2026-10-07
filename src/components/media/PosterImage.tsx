@@ -64,7 +64,7 @@ export function PosterImage({ src, alt, className }: PosterImageProps) {
           loading="lazy"
           onLoad={() => setLoaded(true)}
           onError={handleError}
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
         />
       )}
     </div>

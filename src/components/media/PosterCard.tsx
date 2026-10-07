@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import { createPlaySession, type PlaySessionPayload } from '@/lib/api/sources';
 import { deletePlayRecord } from '@/lib/db';
 import type { SearchResult } from '@/lib/types';
@@ -144,7 +145,7 @@ function PosterCardImpl(props: PosterCardProps) {
         e.preventDefault();
         handleClick();
       }}
-      className="group cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group cursor-pointer rounded-lg transition-transform duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.99]"
     >
       <Card
         className={cn(
@@ -158,16 +159,20 @@ function PosterCardImpl(props: PosterCardProps) {
         {/* Bottom legibility gradient */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
 
-        {/* Hover overlay with play button */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-white/15">
-            <Play className="ml-0.5 h-5 w-5 fill-current" strokeWidth={0} />
+        {/* Hover overlay. The scrim is a plain opacity transition so it reverses
+            on unhover; the button gets a one-shot keyframe pop from
+            tw-animate-css (already imported, and what the shadcn components use)
+            which needs no base transform, so removing it on unhover is
+            invisible. */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/75 via-black/30 to-black/45 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100">
+          <div className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl ring-2 ring-white/20 duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:animate-in group-hover:fade-in-0 group-hover:zoom-in-75">
+            <Play className="ml-0.5 size-5 fill-current" strokeWidth={0} />
           </div>
         </div>
 
         {routing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <Spinner className="text-white" />
           </div>
         )}
 
