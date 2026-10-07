@@ -1,17 +1,15 @@
 services:
   vodhub:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: ghcr.io/tom2almighty/vodhub:latest
     container_name: vodhub
+    restart: unless-stopped
     ports:
-      - '3000:3000'
+      - '127.0.0.1:3000:3000'
     environment:
       - SITE_NAME=VODHUB
       - ADMIN_PASSWORD=your_password
       - AUTH_SECRET=change_me_to_a_long_random_string
-      # - AUTH_TOKEN_TTL=604800
-      # - SOURCES_URL=https://example.com/sources.json
+      - SOURCES_URL=https://example.com/sources.json
+      - SEARCH_CONCURRENCY=10
+      - AUTH_TOKEN_TTL=604800
       # - SOURCES_JSON=[]
-      # - SEARCH_CONCURRENCY=5
