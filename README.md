@@ -34,6 +34,10 @@ npx wrangler pages deploy dist
 | `SOURCES_URL`             | 二选一 | 视频源订阅地址（JSON）                           |
 | `SOURCES_JSON`            | 二选一 | 视频源 JSON 内联配置                             |
 | `SEARCH_CONCURRENCY`      | 否     | CMS 聚合搜索并发数，默认 5，上限 20              |
+| `IMAGE_PROXY_ALLOWED_HOSTS` | 否   | 图片代理额外放行的域名，逗号分隔（默认仅豆瓣域） |
+| `SOURCES_CACHE_TTL_MS`    | 否     | 视频源配置缓存时长（毫秒），默认 300000          |
+| `SOURCES_RETRY_MS`        | 否     | 源加载失败后的重试间隔（毫秒），默认 15000       |
+| `SOURCES_FETCH_TIMEOUT_MS` | 否    | 拉取视频源配置的超时（毫秒），默认 15000         |
 
 ## 视频源配置
 
