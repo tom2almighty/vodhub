@@ -1,8 +1,22 @@
 import { Megaphone, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSite } from '@/lib/hooks/useSite';
 
 const DISMISS_KEY = 'vodhub_announcement_dismissed';
+
+/**
+ * Reads the stored dismissal synchronously. Doing this in the useState
+ * initializer instead of an effect means the banner's visibility is decided in
+ * the same render that receives the announcement — the effect-based version
+ * mounted hidden and then popped in, shifting the page after first paint.
+ */
+function readDismissed(): string {
+  try {
+    return localStorage.getItem(DISMISS_KEY) || '';
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Site-wide notice shown at the top of the home page (configured via the
@@ -11,18 +25,9 @@ const DISMISS_KEY = 'vodhub_announcement_dismissed';
  */
 export function Announcement() {
   const { announcement, announcementTitle } = useSite();
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissedFor, setDismissedFor] = useState(readDismissed);
 
-  useEffect(() => {
-    if (!announcement) return;
-    try {
-      setDismissed(localStorage.getItem(DISMISS_KEY) === announcement);
-    } catch {
-      setDismissed(false);
-    }
-  }, [announcement]);
-
-  if (!announcement || dismissed) return null;
+  if (!announcement || dismissedFor === announcement) return null;
 
   const close = () => {
     try {
@@ -30,7 +35,7 @@ export function Announcement() {
     } catch {
       /* ignore */
     }
-    setDismissed(true);
+    setDismissedFor(announcement);
   };
 
   return (

@@ -32,6 +32,7 @@ export function SearchBar({ value, onChange, onSubmit }: SearchBarProps) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="搜索电影、剧集、综艺..."
+          aria-label="搜索电影、剧集、综艺"
           autoComplete="off"
           autoFocus
           className="h-12 pl-10 pr-12 text-sm"

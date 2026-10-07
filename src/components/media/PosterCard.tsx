@@ -132,7 +132,20 @@ function PosterCardImpl(props: PosterCardProps) {
   const progressDisplay = totalTime !== undefined ? progressPct(progress, totalTime) : progress;
 
   return (
-    <div className="group cursor-pointer" onClick={handleClick}>
+    // role/tabIndex/onKeyDown: the card was a clickable div, so it was
+    // unreachable by keyboard and invisible to assistive tech.
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={variant === 'douban' ? `搜索 ${title}` : `播放 ${title}`}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        handleClick();
+      }}
+      className="group cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <Card
         className={cn(
           'relative aspect-2/3 overflow-hidden rounded-lg border border-border bg-muted shadow-sm',
@@ -200,7 +213,7 @@ function PosterCardImpl(props: PosterCardProps) {
             type="button"
             onClick={handleDelete}
             aria-label="移除"
-            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/55 text-white/85 opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
+            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/55 text-white/85 opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
           </button>

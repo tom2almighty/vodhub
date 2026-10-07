@@ -43,8 +43,12 @@ export function SubcategoryChips({ options, value, onChange }: SubcategoryChipsP
         <Badge
           key={opt}
           variant={opt === value ? 'default' : 'secondary'}
+          // A real button: these were clickable spans, so they could not be
+          // focused or activated from the keyboard.
+          render={<button type="button" />}
+          aria-pressed={opt === value}
           onClick={() => onChange(opt)}
-          className="cursor-pointer px-3 py-1 text-xs font-medium transition-colors"
+          className="h-auto cursor-pointer px-3 py-1 text-xs font-medium transition-colors"
         >
           {opt}
         </Badge>

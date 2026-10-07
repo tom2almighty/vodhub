@@ -1,3 +1,4 @@
+import { isValidElement } from 'react';
 import {
   Carousel,
   CarouselContent,
@@ -15,7 +16,9 @@ export function PosterRow({ children }: { children: React.ReactNode[] }) {
       <CarouselContent className="-ml-3">
         {children.map((child, i) => (
           <CarouselItem
-            key={i}
+            // Prefer the child's own key over the array index so list changes
+            // don't remount every slide.
+            key={isValidElement(child) ? (child.key ?? `slide-${i}`) : `slide-${i}`}
             className="basis-[34%] pl-3 sm:basis-[26%] md:basis-[22%] lg:basis-[18%] xl:basis-[14%]"
           >
             {child}

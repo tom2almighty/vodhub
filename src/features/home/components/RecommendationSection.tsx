@@ -29,17 +29,23 @@ export function RecommendationSection({
           更多 <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
         </Link>
       </div>
-      {loading || items.length === 0 ? (
+      {loading ? (
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="aspect-[2/3] w-32 shrink-0 sm:w-44" />
           ))}
         </div>
+      ) : items.length === 0 ? (
+        // Skeletons used to show whenever the list was empty, so a successful
+        // but empty response left the row "loading" forever.
+        <div className="rounded-lg border border-border bg-card py-12 text-center text-sm text-muted-foreground">
+          暂无内容
+        </div>
       ) : (
         <PosterRow>
-          {items.map((item, i) => (
+          {items.map((item) => (
             <PosterCard
-              key={`${item.id}-${i}`}
+              key={item.id}
               variant="douban"
               title={item.title}
               poster={item.poster}

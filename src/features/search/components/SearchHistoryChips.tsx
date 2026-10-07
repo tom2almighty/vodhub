@@ -33,27 +33,27 @@ export function SearchHistoryChips({ onPick }: SearchHistoryChipsProps) {
       ) : (
         <div className="flex flex-wrap gap-2">
           {history.map((item) => (
+            // Badge renders a <span>, so the keyword and the delete action are
+            // siblings here. Previously the delete button was nested inside a
+            // clickable badge: invalid interactive nesting, and the badge itself
+            // could not take focus, making the delete button unreachable.
             <Badge
               key={item}
               variant="secondary"
-              onClick={() => onPick(item)}
-              className="cursor-pointer gap-1.5 px-3 py-1 text-sm font-normal hover:bg-accent hover:text-foreground"
+              className="h-auto gap-1.5 py-1 pl-3 pr-1.5 text-sm font-normal"
             >
-              <span>{item}</span>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteSearchHistory(item);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.stopPropagation();
-                    deleteSearchHistory(item);
-                  }
-                }}
-                className="rounded-full p-0.5 text-muted-foreground opacity-60 transition-opacity hover:bg-destructive hover:text-destructive-foreground hover:opacity-100"
-                aria-label="删除"
+                onClick={() => onPick(item)}
+                className="cursor-pointer transition-colors hover:text-foreground focus-visible:text-foreground"
+              >
+                {item}
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteSearchHistory(item)}
+                className="rounded-full p-0.5 text-muted-foreground opacity-60 transition-opacity hover:bg-destructive hover:text-destructive-foreground hover:opacity-100 focus-visible:opacity-100"
+                aria-label={`删除 ${item}`}
               >
                 <X className="h-3 w-3" />
               </button>
