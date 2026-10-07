@@ -61,6 +61,7 @@ export default function PlayPage() {
   // superseded, and the controller cancels the request outright.
   const switchSeqRef = useRef(0);
   const switchAbortRef = useRef<AbortController | null>(null);
+  const storageWarnedRef = useRef(false);
 
   useEffect(() => {
     metaRef.current = { title, year, detail };
@@ -89,6 +90,12 @@ export default function PlayPage() {
       total_time: Math.floor(s.total),
       save_time: now,
       search_title: meta.title || '',
+    }).then((stored) => {
+      // Writes fail when the storage quota is full. Silently losing progress is
+      // worse than saying so, but only say it once per session.
+      if (stored || storageWarnedRef.current) return;
+      storageWarnedRef.current = true;
+      toast.error('浏览器存储空间不足，观看进度将无法保存');
     });
   }, []);
 
