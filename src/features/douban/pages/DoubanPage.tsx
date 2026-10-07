@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { useEffect, useMemo, useRef } from 'react';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterGrid } from '@/components/media/PosterGrid';
@@ -60,11 +59,10 @@ export default function DoubanPage() {
       ) : (
         <PosterGrid>
           {items.map((item, i) => (
-            <motion.div
+            <div
               key={`${item.id}-${i}`}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i % 18, 12) * 0.02, duration: 0.25 }}
+              className="animate-fade-in-up"
+              style={{ animationDelay: `${Math.min(i % 18, 12) * 20}ms` }}
             >
               <PosterCard
                 variant="douban"
@@ -75,7 +73,7 @@ export default function DoubanPage() {
                 doubanId={Number(item.id)}
                 doubanType={kind}
               />
-            </motion.div>
+            </div>
           ))}
         </PosterGrid>
       )}

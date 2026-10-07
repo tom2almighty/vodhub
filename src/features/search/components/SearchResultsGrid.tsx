@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterGrid } from '@/components/media/PosterGrid';
@@ -62,36 +61,33 @@ export function SearchResultsGrid({ items, loading, query }: SearchResultsGridPr
   return (
     <>
       <PosterGrid>
-        <AnimatePresence initial={false}>
-          {visibleItems.map((item, i) => {
-            const primary = item.group[0];
-            return (
-              <motion.div
-                key={item.key}
-                layout
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ delay: Math.min(i, 12) * 0.02, duration: 0.25 }}
-              >
-                <PosterCard
-                  variant="search"
-                  title={item.title}
-                  poster={item.poster}
-                  year={item.year}
-                  source={primary.source}
-                  id={primary.id}
-                  sourceName={primary.source_name}
-                  sourceNames={item.group.map((g) => g.source_name)}
-                  episodes={primary.episodes?.length || 0}
-                  doubanId={item.douban_id}
-                  candidates={item.group.length > 1 ? item.group : undefined}
-                  query={query}
-                />
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+        {visibleItems.map((item, i) => {
+          const primary = item.group[0];
+          return (
+            // Entrance-only animation. The previous `layout` prop forced a
+            // layout measurement of every mounted card on each batch append.
+            <div
+              key={item.key}
+              className="animate-fade-in-up"
+              style={{ animationDelay: `${Math.min(i, 12) * 20}ms` }}
+            >
+              <PosterCard
+                variant="search"
+                title={item.title}
+                poster={item.poster}
+                year={item.year}
+                source={primary.source}
+                id={primary.id}
+                sourceName={primary.source_name}
+                sourceNames={item.group.map((g) => g.source_name)}
+                episodes={primary.episodes?.length || 0}
+                doubanId={item.douban_id}
+                candidates={item.group.length > 1 ? item.group : undefined}
+                query={query}
+              />
+            </div>
+          );
+        })}
       </PosterGrid>
       {hasMore && <div ref={sentinelRef} className="h-10 w-full" />}
     </>

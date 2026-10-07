@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { useMemo } from 'react';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterGrid } from '@/components/media/PosterGrid';
@@ -52,11 +51,10 @@ export function HistorySection({ records }: HistorySectionProps) {
       ) : (
         <PosterGrid>
           {items.map((item, i) => (
-            <motion.div
+            <div
               key={item.storageKey}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i, 12) * 0.02, duration: 0.25 }}
+              className="animate-fade-in-up"
+              style={{ animationDelay: `${Math.min(i, 12) * 20}ms` }}
             >
               <PosterCard
                 variant="history"
@@ -72,7 +70,7 @@ export function HistorySection({ records }: HistorySectionProps) {
                 totalTime={item.total_time}
                 query={item.search_title}
               />
-            </motion.div>
+            </div>
           ))}
         </PosterGrid>
       )}

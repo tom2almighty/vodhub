@@ -225,6 +225,32 @@
   display: none;
 }
 
+/* ────────────────────────────────────────────────────────────────
+   Entrance animations.
+
+   These replace the motion/react animations that used to run on every route
+   change and card mount — two keyframes that kept a ~95 kB animation library
+   in the first paint. The global prefers-reduced-motion rule further down
+   neutralises them, which the JS animations never respected.
+   ──────────────────────────────────────────────────────────────── */
+@theme {
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-fade-in-up: fade-in-up 250ms ease-out backwards;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+}
+
 /* Reduce motion respected globally */
 @media (prefers-reduced-motion: reduce) {
   *,

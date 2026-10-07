@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from 'motion/react';
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { BackToTop } from '@/components/shell/BackToTop';
@@ -24,27 +23,22 @@ function Loading() {
 
 function AnimatedRoutes() {
   const location = useLocation();
+  // Keyed on the pathname so each navigation remounts the wrapper and replays
+  // the CSS entrance animation. CSS rather than motion/react: the exit phase
+  // was 150ms of blank screen for a library that dominated the first paint.
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15, ease: 'easeOut' }}
-      >
-        <Routes location={location}>
-          <Route element={<ProtectedLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/douban" element={<DoubanPage />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/play" element={<PlayPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </motion.div>
-    </AnimatePresence>
+    <div key={location.pathname} className="animate-fade-in">
+      <Routes location={location}>
+        <Route element={<ProtectedLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/douban" element={<DoubanPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/play" element={<PlayPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </div>
   );
 }
 

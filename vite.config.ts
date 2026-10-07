@@ -99,7 +99,6 @@ export default defineConfig(({ mode }) => {
             'react-vendor': ['react', 'react-dom', 'react-router-dom'],
             hls: ['hls.js'],
             'base-ui': ['@base-ui/react'],
-            motion: ['motion'],
             query: ['@tanstack/react-query'],
           },
         },
