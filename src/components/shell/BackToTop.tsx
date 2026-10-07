@@ -27,7 +27,12 @@ export function BackToTop() {
       onClick={handleClick}
       data-visible={visible}
       className={cn(
-        'fixed bottom-20 right-6 z-50 h-10 w-10 rounded-full shadow-lg backdrop-blur md:bottom-6',
+        'fixed z-50 h-10 w-10 rounded-full shadow-lg backdrop-blur',
+        // Asymmetric-safe like the other fixed chrome: right-6 alone would sit
+        // inside iPhone Duo's reserved region, and the bottom offset has to
+        // clear the floating tab bar on top of the home-indicator inset.
+        'right-[max(1.5rem,env(safe-area-inset-right))]',
+        'bottom-[calc(env(safe-area-inset-bottom)+5rem)] md:bottom-6',
         'transition-all duration-200',
         'data-[visible=false]:pointer-events-none data-[visible=false]:translate-y-2 data-[visible=false]:opacity-0',
         'data-[visible=true]:translate-y-0 data-[visible=true]:opacity-100',

@@ -64,6 +64,11 @@ export function Navbar() {
       data-scrolled={scrolled}
       className={cn(
         'fixed inset-x-0 top-0 z-40 transition-colors duration-300',
+        // viewport-fit=cover lets the page run under the notch / Dynamic Island,
+        // so the bar has to inset itself or its content sits behind the status
+        // area. The left/right insets matter in landscape on those devices.
+        'pt-[env(safe-area-inset-top)]',
+        'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]',
         'data-[scrolled=true]:border-b data-[scrolled=true]:border-border',
         'data-[scrolled=true]:bg-background/85 data-[scrolled=true]:backdrop-blur-xl',
         'data-[scrolled=false]:bg-background/40 data-[scrolled=false]:backdrop-blur-sm',

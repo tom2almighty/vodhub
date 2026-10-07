@@ -182,22 +182,28 @@
   margin-inline: auto;
   width: 100%;
   max-width: 88rem;
-  padding-inline: 1rem;
-  padding-top: 5rem;
-  /* Extra bottom space on mobile clears the fixed BottomTabBar + safe area. */
+  /* iPhone Duo's safe-area insets are asymmetric (a reserved region sits on one
+     side), so every edge is handled on its own — never a symmetric shorthand.
+     All of these resolve to 0 on devices without insets. */
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-top: calc(5rem + env(safe-area-inset-top));
+  /* Extra bottom space on mobile clears the floating BottomTabBar + safe area. */
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
 }
 @media (min-width: 768px) {
   .app-page {
-    padding-inline: 2.5rem;
-    padding-top: 5.5rem;
+    padding-left: max(2.5rem, env(safe-area-inset-left));
+    padding-right: max(2.5rem, env(safe-area-inset-right));
+    padding-top: calc(5.5rem + env(safe-area-inset-top));
     padding-bottom: 5rem;
   }
 }
 @media (min-width: 1280px) {
   .app-page {
-    padding-inline: 3.5rem;
-    padding-top: 6rem;
+    padding-left: max(3.5rem, env(safe-area-inset-left));
+    padding-right: max(3.5rem, env(safe-area-inset-right));
+    padding-top: calc(6rem + env(safe-area-inset-top));
     padding-bottom: 6rem;
   }
 }
