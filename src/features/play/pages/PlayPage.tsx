@@ -340,33 +340,33 @@ export default function PlayPage() {
           )}
         </div>
 
-        {/* lg+: wrapper is positioned, panel fills via absolute so the grid row */}
-        {/* height is governed entirely by the player's aspect-ratio.            */}
-        {/* mobile: panel stacks below in normal flow.                            */}
-        <div className="lg:relative">
-          <aside className="min-h-0 lg:absolute lg:inset-0">
-            <PlaybackPanel
-              totalEpisodes={detail?.episodes?.length || 0}
-              episodesTitles={detail?.episodes_titles || []}
-              episodeValue={episodeIndex + 1}
-              onEpisodeChange={handleEpisodeChange}
-              currentSource={currentSource}
-              currentId={currentId}
-              availableSources={availableSources}
-              onSourceChange={handleSourceChange}
-              info={{
-                title,
-                year: detail?.year || year,
-                currentEpisodeTitle: detail?.episodes_titles?.[episodeIndex],
-                typeName: detail?.type_name,
-                area: detail?.area,
-                remark: detail?.remark,
-                sourceName: detail?.source_name,
-                desc: detail?.desc,
-              }}
-            />
-          </aside>
-        </div>
+        {/* The panel is content-sized, not stretched to the player's 16:9
+            height: at desktop widths a short episode list used to leave a few
+            hundred pixels of empty card below it. It sticks while the taller
+            player scrolls past, and caps its own height so a long episode list
+            scrolls inside the card instead of stretching the page. */}
+        <aside className="min-h-0 lg:sticky lg:top-20 lg:flex lg:max-h-[calc(100svh-7rem)] lg:flex-col">
+          <PlaybackPanel
+            totalEpisodes={detail?.episodes?.length || 0}
+            episodesTitles={detail?.episodes_titles || []}
+            episodeValue={episodeIndex + 1}
+            onEpisodeChange={handleEpisodeChange}
+            currentSource={currentSource}
+            currentId={currentId}
+            availableSources={availableSources}
+            onSourceChange={handleSourceChange}
+            info={{
+              title,
+              year: detail?.year || year,
+              currentEpisodeTitle: detail?.episodes_titles?.[episodeIndex],
+              typeName: detail?.type_name,
+              area: detail?.area,
+              remark: detail?.remark,
+              sourceName: detail?.source_name,
+              desc: detail?.desc,
+            }}
+          />
+        </aside>
       </div>
     </div>
   );

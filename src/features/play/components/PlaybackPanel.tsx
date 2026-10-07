@@ -69,7 +69,10 @@ export function PlaybackPanel({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
+    // No h-full: the panel is content-sized and its wrapper caps the height, so
+    // flex-shrink (with min-h-0) is what lets a long episode list scroll inside
+    // the card instead of stretching it.
+    <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
       <Tabs defaultValue="episodes" className="flex h-full min-h-0 flex-col">
         <div className="border-b border-border p-2">
           <TabsList className="grid w-full grid-cols-3">
