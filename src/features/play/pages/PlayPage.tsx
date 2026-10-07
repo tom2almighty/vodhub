@@ -50,9 +50,7 @@ export default function PlayPage() {
   const [episodeIndex, setEpisodeIndex] = useState(0);
   const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
   const [switching, setSwitching] = useState(false);
-  const [switchingText, setSwitchingText] = useState('切换中');
   const [startTime, setStartTime] = useState(0);
-  const [adFilter, setAdFilter] = useState(false);
 
   const initialized = useRef(false);
   const snapshotRef = useRef<SnapshotState>({ source: '', id: '', index: 0, time: 0, total: 0 });
@@ -212,16 +210,6 @@ export default function PlayPage() {
     [persistProgress],
   );
 
-  // Toggling the ad filter rebuilds the hls instance (via playerKey), so carry
-  // the current playback time over and resume from it.
-  const handleToggleAdFilter = useCallback(() => {
-    persistProgress(true);
-    setStartTime(snapshotRef.current.time || 0);
-    setSwitchingText('重新加载中');
-    setSwitching(true);
-    setAdFilter((v) => !v);
-  }, [persistProgress]);
-
   const handleSourceChange = useCallback(
     async (newSource: string, newId: string, _newTitle: string) => {
       if (newSource === currentSource && newId === currentId) return;
@@ -237,7 +225,6 @@ export default function PlayPage() {
       const seq = switchSeqRef.current + 1;
       switchSeqRef.current = seq;
 
-      setSwitchingText('切换中');
       setSwitching(true);
       try {
         const nd = await fetchSourceDetail(newSource, newId, controller.signal);
@@ -304,7 +291,7 @@ export default function PlayPage() {
     );
   }
 
-  const playerKey = `${currentSource}+${currentId}+${episodeIndex}+${adFilter}`;
+  const playerKey = `${currentSource}+${currentId}+${episodeIndex}`;
 
   return (
     <div className="app-page">
@@ -322,8 +309,6 @@ export default function PlayPage() {
                   poster={cover}
                   startTime={startTime}
                   title={title}
-                  adFilterEnabled={adFilter}
-                  onToggleAdFilter={handleToggleAdFilter}
                   onTimeUpdate={handleTimeUpdate}
                   onEnded={handleEnded}
                   onCanPlay={handleCanPlay}
@@ -337,7 +322,7 @@ export default function PlayPage() {
             <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-sm text-foreground">
                 <Spinner className="text-white" />
-                {switchingText}
+                切换中
               </div>
             </div>
           )}

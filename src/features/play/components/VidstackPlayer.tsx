@@ -1,4 +1,3 @@
-import { createHlsLoaderClass, createM3u8Processor } from '@ouonnki/cms-core/m3u8';
 import {
   isHLSProvider,
   type MediaCanPlayDetail,
@@ -10,9 +9,6 @@ import {
 } from '@vidstack/react';
 import {
   type DefaultLayoutTranslations,
-  DefaultMenuCheckbox,
-  DefaultMenuItem,
-  DefaultMenuSection,
   DefaultVideoLayout,
   defaultLayoutIcons,
 } from '@vidstack/react/player/layouts/default';
@@ -81,13 +77,6 @@ const ZH_CN: DefaultLayoutTranslations = {
   Volume: '音量',
 };
 
-// HLS ad filter — strips `#EXT-X-DISCONTINUITY` markers (a common ad delimiter)
-// from the manifest before hls.js parses it. Reuses cms-core's m3u8 utilities.
-// Built once at module scope so the custom loader extends the same Hls we feed
-// to the provider below.
-const adProcessor = createM3u8Processor({ filterAds: true });
-const AdFilterLoader = createHlsLoaderClass({ m3u8Processor: adProcessor, Hls });
-
 export interface VidstackPlayerProps {
   src: string;
   poster?: string;
@@ -95,8 +84,6 @@ export interface VidstackPlayerProps {
   title?: string;
   mirror?: boolean;
   aspectRatio?: string;
-  adFilterEnabled?: boolean;
-  onToggleAdFilter?: () => void;
   onTimeUpdate?: (detail: MediaTimeUpdateEventDetail) => void;
   onEnded?: () => void;
   onCanPlay?: (detail: MediaCanPlayDetail) => void;
@@ -111,8 +98,6 @@ export function VidstackPlayer({
   title,
   mirror,
   aspectRatio,
-  adFilterEnabled = false,
-  onToggleAdFilter,
   onTimeUpdate,
   onEnded,
   onCanPlay,
@@ -140,12 +125,10 @@ export function VidstackPlayer({
     }
   }, [mirror]);
 
-  // Use the bundled hls.js (avoids vidstack's CDN fetch) and, when enabled,
-  // route manifests through the ad-filtering loader.
+  // Use the bundled hls.js instead of letting vidstack fetch it from a CDN.
   const handleProviderChange = (provider: MediaProviderAdapter | null) => {
     if (isHLSProvider(provider)) {
       provider.library = Hls;
-      if (adFilterEnabled) provider.config = { loader: AdFilterLoader };
     }
   };
 
@@ -225,55 +208,7 @@ export function VidstackPlayer({
           </div>
         )}
       </MediaProvider>
-      <DefaultVideoLayout
-        icons={defaultLayoutIcons}
-        translations={ZH_CN}
-        slots={
-          onToggleAdFilter
-            ? {
-                settingsMenuItemsEnd: (
-                  <AdFilterItem enabled={Boolean(adFilterEnabled)} onToggle={onToggleAdFilter} />
-                ),
-              }
-            : undefined
-        }
-      />
+      <DefaultVideoLayout icons={defaultLayoutIcons} translations={ZH_CN} />
     </MediaPlayer>
-  );
-}
-
-interface AdFilterItemProps {
-  enabled: boolean;
-  onToggle: () => void;
-}
-
-/**
- * Ad-filter toggle in the settings menu.
- *
- * Follows vidstack's own pattern for a boolean setting
- * (DefaultMenuSection > DefaultMenuItem > DefaultMenuCheckbox), the same shape
- * it uses for its Announcements and Keyboard Animations toggles.
- *
- * `defaultChecked` is load-bearing rather than cosmetic: DefaultMenuCheckbox
- * reports its initial value through onChange from a mount effect, and that value
- * is derived from `defaultChecked` when there is no storageKey. Without it the
- * row announced `false` while the filter was on, so the guard below read a
- * mismatch and switched the filter off — merely opening the settings menu turned
- * it off.
- */
-function AdFilterItem({ enabled, onToggle }: AdFilterItemProps) {
-  const label = '过滤广告切片';
-  return (
-    <DefaultMenuSection>
-      <DefaultMenuItem label={label}>
-        <DefaultMenuCheckbox
-          label={label}
-          defaultChecked={enabled}
-          onChange={(checked) => {
-            if (checked !== enabled) onToggle();
-          }}
-        />
-      </DefaultMenuItem>
-    </DefaultMenuSection>
   );
 }
