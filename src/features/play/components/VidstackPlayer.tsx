@@ -12,6 +12,7 @@ import {
   type DefaultLayoutTranslations,
   DefaultMenuCheckbox,
   DefaultMenuItem,
+  DefaultMenuSection,
   DefaultVideoLayout,
   defaultLayoutIcons,
 } from '@vidstack/react/player/layouts/default';
@@ -246,16 +247,33 @@ interface AdFilterItemProps {
   onToggle: () => void;
 }
 
+/**
+ * Ad-filter toggle in the settings menu.
+ *
+ * Follows vidstack's own pattern for a boolean setting
+ * (DefaultMenuSection > DefaultMenuItem > DefaultMenuCheckbox), the same shape
+ * it uses for its Announcements and Keyboard Animations toggles.
+ *
+ * `defaultChecked` is load-bearing rather than cosmetic: DefaultMenuCheckbox
+ * reports its initial value through onChange from a mount effect, and that value
+ * is derived from `defaultChecked` when there is no storageKey. Without it the
+ * row announced `false` while the filter was on, so the guard below read a
+ * mismatch and switched the filter off — merely opening the settings menu turned
+ * it off.
+ */
 function AdFilterItem({ enabled, onToggle }: AdFilterItemProps) {
+  const label = '过滤广告切片';
   return (
-    <DefaultMenuItem label="过滤广告切片">
-      <DefaultMenuCheckbox
-        label="过滤广告切片"
-        checked={enabled}
-        onChange={(checked) => {
-          if (checked !== enabled) onToggle();
-        }}
-      />
-    </DefaultMenuItem>
+    <DefaultMenuSection>
+      <DefaultMenuItem label={label}>
+        <DefaultMenuCheckbox
+          label={label}
+          defaultChecked={enabled}
+          onChange={(checked) => {
+            if (checked !== enabled) onToggle();
+          }}
+        />
+      </DefaultMenuItem>
+    </DefaultMenuSection>
   );
 }
