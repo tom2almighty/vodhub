@@ -1,5 +1,4 @@
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 
 interface SearchProgressProps {
   total: number;
@@ -26,7 +25,7 @@ export function SearchProgress({ total, completed, loading, resultsCount }: Sear
           <span className="text-xs tabular-nums text-muted-foreground">
             {completed}/{total} 源
           </span>
-          <Progress value={pct} className={cn('h-1 w-24')} />
+          <Progress value={pct} className="h-1 w-24" />
         </div>
       )}
     </div>

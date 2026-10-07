@@ -248,11 +248,9 @@ export default function PlayPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
         <p className="text-base">{error}</p>
-        <Button asChild variant="secondary">
-          <Link to="/search">
-            <ArrowLeft className="h-4 w-4" />
-            返回搜索
-          </Link>
+        <Button variant="secondary" render={<Link to="/search" />}>
+          <ArrowLeft className="h-4 w-4" />
+          返回搜索
         </Button>
       </div>
     );
