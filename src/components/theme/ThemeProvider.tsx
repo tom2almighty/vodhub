@@ -19,8 +19,15 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 function readInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'system';
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+  // localStorage throws in Safari private mode and when storage is blocked.
+  // This runs as a useState initializer during render, so an unguarded throw
+  // would take the whole tree down.
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+  } catch {
+    return 'system';
+  }
 }
 
 function resolveTheme(theme: Theme): Resolved {
@@ -56,7 +63,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   const setTheme = useCallback((t: Theme) => {
-    window.localStorage.setItem(STORAGE_KEY, t);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, t);
+    } catch {
+      /* storage unavailable or full — apply for this session only */
+    }
     setThemeState(t);
   }, []);
 

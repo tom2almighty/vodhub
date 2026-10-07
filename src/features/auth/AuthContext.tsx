@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { verify } from '@/lib/api/auth';
+import { type VerifyResult, verify } from '@/lib/api/auth';
 import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth';
-import { queryClient } from '@/lib/query/client';
+import { queryClient, resetQueryCache } from '@/lib/query/client';
 import { queryKeys } from '@/lib/query/keys';
 
 interface AuthContextValue {
@@ -24,9 +24,10 @@ function readInitialAuth(): boolean {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(readInitialAuth);
 
-  // Best-effort server-side verification for restored sessions.
-  // Stays silent on transient failures; protected APIs enforce token validity.
-  const { data: verifyOk } = useQuery({
+  // Best-effort server-side verification for restored sessions. Only an
+  // explicit rejection ends the session; a network failure is inconclusive and
+  // leaves the token in place (protected APIs enforce validity anyway).
+  const { data: verifyResult } = useQuery({
     queryKey: queryKeys.authVerify,
     queryFn: () => verify(),
     enabled: isAuthenticated,
@@ -35,24 +36,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    if (isAuthenticated && verifyOk === false) {
+    if (isAuthenticated && verifyResult === 'invalid') {
       clearAuthToken();
       setIsAuthenticated(false);
-      queryClient.clear();
+      resetQueryCache();
     }
-  }, [verifyOk, isAuthenticated]);
+  }, [verifyResult, isAuthenticated]);
 
   const setAuthenticated = useCallback((next: boolean, token?: string, persist?: boolean) => {
-    if (next && token) setAuthToken(token, !!persist);
+    if (next && token) {
+      setAuthToken(token, !!persist);
+      // Freshly issued by the server — no need to spend a round trip verifying it.
+      queryClient.setQueryData(queryKeys.authVerify, 'valid' satisfies VerifyResult);
+    }
     if (!next) clearAuthToken();
     setIsAuthenticated(next);
-    if (!next) queryClient.clear();
+    if (!next) resetQueryCache();
   }, []);
 
   const logout = useCallback(() => {
     clearAuthToken();
     setIsAuthenticated(false);
-    queryClient.clear();
+    resetQueryCache();
   }, []);
 
   return (

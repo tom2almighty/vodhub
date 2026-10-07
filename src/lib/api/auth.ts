@@ -20,12 +20,20 @@ export async function login(password: string): Promise<string | null> {
   return data?.token || null;
 }
 
-export async function verify(): Promise<boolean> {
+/**
+ * Result of a token check. `error` means the server could not be reached or
+ * answered unexpectedly — it must NOT be treated as "the token is bad", or a
+ * network blip signs the user out.
+ */
+export type VerifyResult = 'valid' | 'invalid' | 'error';
+
+export async function verify(): Promise<VerifyResult> {
   try {
     const resp = await apiFetch('/api/auth/verify');
-    return resp.ok;
+    if (resp.ok) return 'valid';
+    return resp.status === 401 || resp.status === 403 ? 'invalid' : 'error';
   } catch {
-    return false;
+    return 'error';
   }
 }
 
