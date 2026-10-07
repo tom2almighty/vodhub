@@ -1,20 +1,13 @@
-import { readEnv } from './env.mjs';
+import { readEnv, readEnvInt } from './env.mjs';
+import { COMMON_UA, fetchWithTimeout, isHttpUrl } from './http.mjs';
 
-const COMMON_UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 15000;
+const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
+const DEFAULT_FAILURE_RETRY_MS = 15 * 1000;
+const DEFAULT_FETCH_TIMEOUT_MS = 15000;
 
-let cache = { sources: null, key: '', at: 0 };
-
-function isHttpUrl(value) {
-  try {
-    const u = new URL(value);
-    return u.protocol === 'http:' || u.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
+let cache = { sources: null, key: '', nextRetryAt: 0 };
+let inflight = null;
+let inflightKey = '';
 
 export { isHttpUrl };
 
@@ -47,42 +40,66 @@ function parse(raw) {
   }
 }
 
-async function fetchText(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort('request timeout'), FETCH_TIMEOUT_MS);
-  try {
-    const resp = await fetch(url, {
-      signal: controller.signal,
-      headers: { Accept: 'application/json, text/plain, */*', 'User-Agent': COMMON_UA },
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return await resp.text();
-  } finally {
-    clearTimeout(timer);
-  }
+async function fetchText(url, timeoutMs) {
+  const resp = await fetchWithTimeout(url, {
+    timeoutMs,
+    headers: { Accept: 'application/json, text/plain, */*', 'User-Agent': COMMON_UA },
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return await resp.text();
 }
 
-export async function loadSources(env) {
+async function load(env, cacheKey) {
   const url = readEnv(env, 'SOURCES_URL');
   const inline = readEnv(env, 'SOURCES_JSON');
-  const cacheKey = `${url}\n${inline}`;
-  const now = Date.now();
-  if (cache.sources && cache.key === cacheKey && now - cache.at < CACHE_TTL_MS) {
-    return cache.sources;
-  }
+  const ttlMs = readEnvInt(env, 'SOURCES_CACHE_TTL_MS', DEFAULT_CACHE_TTL_MS);
+  const retryMs = readEnvInt(env, 'SOURCES_RETRY_MS', DEFAULT_FAILURE_RETRY_MS);
+  const timeoutMs = readEnvInt(env, 'SOURCES_FETCH_TIMEOUT_MS', DEFAULT_FETCH_TIMEOUT_MS);
 
   let sources = [];
+  let failed = false;
+
   if (url && isHttpUrl(url)) {
     try {
-      sources = parse(await fetchText(url));
+      sources = parse(await fetchText(url, timeoutMs));
     } catch (err) {
+      failed = true;
       console.error('SOURCES_URL load failed:', err);
     }
   }
   if (sources.length === 0 && inline) sources = parse(inline);
 
-  cache = { sources, key: cacheKey, at: now };
+  if (failed && sources.length === 0) {
+    // Never cache a transient failure for the full TTL — that would silently
+    // disable search for every request in the window. Serve the last known-good
+    // list if we have one, and retry after a short backoff instead.
+    const fallback = cache.sources !== null && cache.key === cacheKey ? cache.sources : [];
+    cache = { sources: fallback, key: cacheKey, nextRetryAt: Date.now() + retryMs };
+    return fallback;
+  }
+
+  cache = { sources, key: cacheKey, nextRetryAt: Date.now() + ttlMs };
   return sources;
+}
+
+export async function loadSources(env) {
+  const cacheKey = `${readEnv(env, 'SOURCES_URL')}\n${readEnv(env, 'SOURCES_JSON')}`;
+  const now = Date.now();
+
+  if (cache.sources !== null && cache.key === cacheKey && now < cache.nextRetryAt) {
+    return cache.sources;
+  }
+  // Dedupe concurrent cold loads so a burst of requests makes one upstream call.
+  if (inflight && inflightKey === cacheKey) return inflight;
+
+  const task = load(env, cacheKey);
+  inflight = task;
+  inflightKey = cacheKey;
+  try {
+    return await task;
+  } finally {
+    inflight = null;
+  }
 }
 
 export async function findSource(env, id) {

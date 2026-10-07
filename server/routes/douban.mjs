@@ -1,11 +1,17 @@
-const COMMON_UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+import { createCache } from '../lib/cache.mjs';
+import { COMMON_UA, fetchWithTimeout } from '../lib/http.mjs';
+
 const DOUBAN_BASE = 'https://m.douban.com';
 const FETCH_TIMEOUT_MS = 10000;
 const RECOMMENDATIONS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CATEGORY_TTL_MS = RECOMMENDATIONS_TTL_MS;
 
-const responseCache = new Map();
+// Bounded so `start`/`limit` enumeration can't grow the cache without limit.
+const MAX_START = 5000;
+const MAX_LIMIT = 50;
+const DEFAULT_LIMIT = 18;
+
+const responseCache = createCache({ maxEntries: 200 });
 
 const MOVIE_TYPES = {
   全部: { kind: 'movie', category: '热门', type: '全部' },
@@ -37,6 +43,13 @@ const REGISTRY = {
   show: { default: '综合', types: SHOW_TYPES },
 };
 
+/** Coerces an untrusted query param to a bounded non-negative integer. */
+function clampInt(raw, fallback, max) {
+  const parsed = Number.parseInt(String(raw ?? ''), 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return Math.min(parsed, max);
+}
+
 function mapItems(items = []) {
   return items.map((item) => ({
     id: item.id,
@@ -48,61 +61,49 @@ function mapItems(items = []) {
   }));
 }
 
-function getCached(key) {
-  const entry = responseCache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expiresAt) {
-    responseCache.delete(key);
-    return null;
-  }
-  return entry.data;
+async function fetchJson(url, signal) {
+  const resp = await fetchWithTimeout(url, {
+    timeoutMs: FETCH_TIMEOUT_MS,
+    signal,
+    headers: {
+      Referer: 'https://movie.douban.com/',
+      'User-Agent': COMMON_UA,
+      Accept: 'application/json, text/plain, */*',
+    },
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return await resp.json();
 }
 
-function setCached(key, data, ttl) {
-  responseCache.set(key, { data, expiresAt: Date.now() + ttl });
-}
-
-async function fetchJson(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort('request timeout'), FETCH_TIMEOUT_MS);
-  try {
-    const resp = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        Referer: 'https://movie.douban.com/',
-        'User-Agent': COMMON_UA,
-        Accept: 'application/json, text/plain, */*',
-      },
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return await resp.json();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function fetchHot({ kind, category, type, start, limit }, cacheTtl = CATEGORY_TTL_MS) {
+async function fetchHot({ kind, category, type, start, limit }, cacheTtl, signal) {
   const url = new URL(`/rexxar/api/v2/subject/recent_hot/${kind}`, DOUBAN_BASE);
-  url.searchParams.set('start', String(start || '0'));
-  url.searchParams.set('limit', String(limit || '18'));
+  url.searchParams.set('start', String(start));
+  url.searchParams.set('limit', String(limit));
   if (category) url.searchParams.set('category', category);
   if (type) url.searchParams.set('type', type);
 
   const cacheKey = url.toString();
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const data = await fetchJson(cacheKey);
-  const result = { total: data.total || 0, items: mapItems(data.items || []) };
-  setCached(cacheKey, result, cacheTtl);
-  return result;
+  // `resolve` dedupes concurrent cold requests for the same key.
+  return await responseCache.resolve(cacheKey, cacheTtl, async () => {
+    const data = await fetchJson(cacheKey, signal);
+    return { total: data.total || 0, items: mapItems(data.items || []) };
+  });
 }
 
 export async function recommendations(c) {
+  const signal = c.req.raw.signal;
   const [movies, tv, show] = await Promise.all([
-    fetchHot({ ...MOVIE_TYPES.全部, limit: 18 }, RECOMMENDATIONS_TTL_MS),
-    fetchHot({ ...TV_TYPES.综合, limit: 18 }, RECOMMENDATIONS_TTL_MS),
-    fetchHot({ ...SHOW_TYPES.综合, limit: 18 }, RECOMMENDATIONS_TTL_MS),
+    fetchHot(
+      { ...MOVIE_TYPES.全部, start: 0, limit: DEFAULT_LIMIT },
+      RECOMMENDATIONS_TTL_MS,
+      signal,
+    ),
+    fetchHot({ ...TV_TYPES.综合, start: 0, limit: DEFAULT_LIMIT }, RECOMMENDATIONS_TTL_MS, signal),
+    fetchHot(
+      { ...SHOW_TYPES.综合, start: 0, limit: DEFAULT_LIMIT },
+      RECOMMENDATIONS_TTL_MS,
+      signal,
+    ),
   ]);
   return c.json({ movies: movies.items, tvShows: tv.items, varietyShows: show.items }, 200, {
     'Cache-Control': 'public, max-age=604800, s-maxage=604800',
@@ -117,10 +118,10 @@ export async function category(c) {
 
   const typeKey = registry.types[typeParam] ? typeParam : registry.default;
   const spec = registry.types[typeKey];
-  const start = c.req.query('start') || '0';
-  const limit = c.req.query('limit') || '18';
+  const start = clampInt(c.req.query('start'), 0, MAX_START);
+  const limit = clampInt(c.req.query('limit'), DEFAULT_LIMIT, MAX_LIMIT);
 
-  const data = await fetchHot({ ...spec, start, limit });
+  const data = await fetchHot({ ...spec, start, limit }, CATEGORY_TTL_MS, c.req.raw.signal);
   return c.json(data, 200, {
     'Cache-Control': 'public, max-age=1800, s-maxage=1800',
   });
