@@ -4,6 +4,7 @@ import { stripDescriptionHtml } from '@/lib/utils';
 interface DetailMetaProps {
   title: string;
   year?: string;
+  score?: string;
   currentEpisodeTitle?: string;
   typeName?: string;
   area?: string;
@@ -15,6 +16,7 @@ interface DetailMetaProps {
 export function DetailMeta({
   title,
   year,
+  score,
   currentEpisodeTitle,
   typeName,
   area,
@@ -31,6 +33,13 @@ export function DetailMeta({
       )}
 
       <div className="mt-3 flex flex-wrap gap-2">
+        {/* Same treatment as the poster card's rating badge, which is
+            deliberately a hardcoded amber rather than a theme token. */}
+        {score && (
+          <Badge className="h-auto bg-amber-400 font-bold text-black hover:bg-amber-400">
+            {score}
+          </Badge>
+        )}
         {typeName && <Badge variant="default">{typeName}</Badge>}
         {year && <Badge variant="secondary">{year}</Badge>}
         {area && <Badge variant="secondary">{area}</Badge>}
@@ -40,9 +49,9 @@ export function DetailMeta({
 
       {cleanDesc && (
         <>
-          <div className="mt-5 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            简介
-          </div>
+          {/* No uppercase/tracking-wider: both are no-ops for CJK text and the
+              tracking fights the global negative letter-spacing. */}
+          <div className="mt-5 mb-2 text-xs font-semibold text-muted-foreground">简介</div>
           <p className="whitespace-pre-line text-sm leading-7 text-foreground/90">{cleanDesc}</p>
         </>
       )}

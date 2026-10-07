@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterGrid } from '@/components/media/PosterGrid';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import type { RecommendationItem } from '@/lib/types';
 import { CategoryTabs, SubcategoryChips, useDoubanType } from '../components/CategoryTabs';
 import { useDoubanCategories } from '../hooks/useDoubanCategories';
@@ -53,7 +54,7 @@ export default function DoubanPage() {
       {isInitialLoading ? (
         <PosterGrid>
           {Array.from({ length: 12 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[2/3]" />
+            <Skeleton key={i} className="aspect-2/3" />
           ))}
         </PosterGrid>
       ) : (
@@ -81,7 +82,7 @@ export default function DoubanPage() {
       <div ref={loaderRef} className="py-10 text-center">
         {query.isFetchingNextPage && (
           <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+            <Spinner className="size-3" />
             加载中
           </span>
         )}

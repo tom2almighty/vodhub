@@ -1,6 +1,7 @@
-import { X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { clearSearchHistory, deleteSearchHistory } from '@/lib/db';
 import { useSearchHistory } from '../hooks/useSearchHistory';
 
@@ -27,9 +28,14 @@ export function SearchHistoryChips({ onPick }: SearchHistoryChipsProps) {
         )}
       </div>
       {history.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card py-12 text-center text-sm text-muted-foreground">
-          暂无搜索历史
-        </div>
+        <Empty className="border border-border bg-card py-12">
+          <EmptyMedia variant="icon">
+            <Search />
+          </EmptyMedia>
+          <EmptyHeader>
+            <EmptyTitle>暂无搜索历史</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div className="flex flex-wrap gap-2">
           {history.map((item) => (

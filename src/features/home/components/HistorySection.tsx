@@ -1,7 +1,15 @@
+import { History } from 'lucide-react';
 import { useMemo } from 'react';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterGrid } from '@/components/media/PosterGrid';
 import { Button } from '@/components/ui/button';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { clearAllPlayRecords, parseStorageKey } from '@/lib/db';
 import type { PlayRecord } from '@/lib/types';
 
@@ -45,9 +53,15 @@ export function HistorySection({ records }: HistorySectionProps) {
         )}
       </div>
       {items.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card py-20 text-center text-sm text-muted-foreground">
-          暂无观看历史
-        </div>
+        <Empty className="border border-border bg-card py-16">
+          <EmptyMedia variant="icon">
+            <History />
+          </EmptyMedia>
+          <EmptyHeader>
+            <EmptyTitle>暂无观看历史</EmptyTitle>
+            <EmptyDescription>播放过的内容会出现在这里</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <PosterGrid>
           {items.map((item, i) => (

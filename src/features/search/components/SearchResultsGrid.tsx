@@ -1,6 +1,14 @@
+import { SearchX } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PosterCard } from '@/components/media/PosterCard';
 import { PosterGrid } from '@/components/media/PosterGrid';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { AggregatedItem } from '../lib/aggregate';
 
@@ -42,9 +50,15 @@ export function SearchResultsGrid({ items, loading, query }: SearchResultsGridPr
 
   if (items.length === 0 && !loading) {
     return (
-      <div className="rounded-lg border border-border bg-card py-20 text-center text-sm text-muted-foreground">
-        未找到相关内容
-      </div>
+      <Empty className="border border-border bg-card py-16">
+        <EmptyMedia variant="icon">
+          <SearchX />
+        </EmptyMedia>
+        <EmptyHeader>
+          <EmptyTitle>未找到相关内容</EmptyTitle>
+          <EmptyDescription>换个关键词试试</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -52,7 +66,7 @@ export function SearchResultsGrid({ items, loading, query }: SearchResultsGridPr
     return (
       <PosterGrid>
         {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-[2/3]" />
+          <Skeleton key={i} className="aspect-2/3" />
         ))}
       </PosterGrid>
     );

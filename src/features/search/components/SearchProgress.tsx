@@ -1,4 +1,5 @@
 import { Progress } from '@/components/ui/progress';
+import { Spinner } from '@/components/ui/spinner';
 
 interface SearchProgressProps {
   total: number;
@@ -19,9 +20,7 @@ export function SearchProgress({ total, completed, loading, resultsCount }: Sear
       </div>
       {total > 0 && (
         <div className="flex items-center gap-3">
-          {loading && (
-            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
-          )}
+          {loading && <Spinner className="size-3" />}
           <span className="text-xs tabular-nums text-muted-foreground">
             {completed}/{total} 源
           </span>

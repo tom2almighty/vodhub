@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { BackToTop } from '@/components/shell/BackToTop';
 import { BottomTabBar } from '@/components/shell/BottomTabBar';
 import { Navbar } from '@/components/shell/Navbar';
+import { Spinner } from '@/components/ui/spinner';
 import { BareLayout } from './layouts/BareLayout';
 import { ProtectedLayout } from './layouts/ProtectedLayout';
 
@@ -16,7 +17,7 @@ const PlayPage = lazy(() => import('@/features/play/pages/PlayPage'));
 function Loading() {
   return (
     <div className="flex min-h-96 items-center justify-center">
-      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+      <Spinner className="size-5 text-muted-foreground" />
     </div>
   );
 }

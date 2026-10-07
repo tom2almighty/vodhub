@@ -4,6 +4,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { fetchSourceDetail, type PlaySessionResponse } from '@/lib/api/sources';
 import { generateStorageKey, getAllPlayRecords, savePlayRecord } from '@/lib/db';
 import type { SearchResult } from '@/lib/types';
@@ -32,7 +33,7 @@ interface SnapshotState {
 function PlayerLoading() {
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">
-      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      <Spinner className="text-white" />
     </div>
   );
 }
@@ -281,9 +282,11 @@ export default function PlayPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      // min-h-screen would be exactly the viewport, and the navbar is fixed on
+      // top of it, leaving no room to scroll. Subtract the navbar height.
+      <div className="flex min-h-[calc(100svh-3.5rem)] items-center justify-center">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+          <Spinner />
           加载中
         </div>
       </div>
@@ -291,7 +294,7 @@ export default function PlayPage() {
   }
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
+      <div className="flex min-h-[calc(100svh-3.5rem)] flex-col items-center justify-center gap-4 px-4 text-center">
         <p className="text-base">{error}</p>
         <Button variant="secondary" render={<Link to="/search" />}>
           <ArrowLeft className="h-4 w-4" />
@@ -333,7 +336,7 @@ export default function PlayPage() {
           {switching && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-sm text-foreground">
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <Spinner className="text-white" />
                 {switchingText}
               </div>
             </div>
@@ -358,6 +361,7 @@ export default function PlayPage() {
             info={{
               title,
               year: detail?.year || year,
+              score: detail?.score,
               currentEpisodeTitle: detail?.episodes_titles?.[episodeIndex],
               typeName: detail?.type_name,
               area: detail?.area,

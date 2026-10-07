@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DetailMeta } from './DetailMeta';
 
@@ -13,6 +14,7 @@ interface SourceLike {
 interface MediaInfo {
   title: string;
   year?: string;
+  score?: string;
   currentEpisodeTitle?: string;
   typeName?: string;
   area?: string;
@@ -134,7 +136,7 @@ export function PlaybackPanel({
                       className="h-10 min-w-0 px-2 text-xs"
                     >
                       {isLoading ? (
-                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+                        <Spinner className="size-3" />
                       ) : (
                         <span className="block truncate">{src.source_name}</span>
                       )}
