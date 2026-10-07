@@ -1,7 +1,10 @@
 import { normalizeYear } from '../lib/cms.mjs';
-import { findSource } from '../lib/sources.mjs';
-import { fetchDetail } from './detail.mjs';
+import { findSource, loadSources } from '../lib/sources.mjs';
+import { fetchDetailResult } from './detail.mjs';
 import { aggregate } from './search.mjs';
+
+const MAX_BODY_BYTES = 256 * 1024;
+const MAX_CANDIDATES = 50;
 
 function emptyResult(overrides = {}) {
   return {
@@ -32,7 +35,12 @@ async function resolveCandidates(payload, env) {
 
   if (mode === 'group') {
     const list = Array.isArray(payload.candidates) ? payload.candidates : [];
-    const filtered = list.filter((cand) => cand?.source && cand?.id);
+    // Disabled sources must not be reachable through the client-supplied list.
+    const enabled = new Set((await loadSources(env)).filter((s) => s.isEnabled).map((s) => s.id));
+    const filtered = list
+      .slice(0, MAX_CANDIDATES)
+      .filter((cand) => cand?.source && cand?.id && enabled.has(String(cand.source)))
+      .map((cand) => ({ ...cand, source: String(cand.source), id: String(cand.id) }));
     if (filtered.length === 0) throw new Error('缺少候选播放源');
     return filtered;
   }
@@ -42,6 +50,7 @@ async function resolveCandidates(payload, env) {
     const id = String(payload.id || '');
     if (!source || !id) throw new Error('缺少 source 或 id');
     const src = await findSource(env, source);
+    if (src && !src.isEnabled) throw new Error('播放源已停用');
     return [
       emptyResult({
         id,
@@ -67,6 +76,10 @@ async function resolveCandidates(payload, env) {
 
 export async function playSession(c) {
   const env = c.env;
+
+  const declaredLength = Number(c.req.header('content-length') || 0);
+  if (declaredLength > MAX_BODY_BYTES) return c.json({ error: '请求体过大' }, 413);
+
   const payload = await c.req.json().catch(() => null);
   if (!payload) return c.json({ error: '请求体格式无效' }, 400);
 
@@ -79,20 +92,23 @@ export async function playSession(c) {
 
   const preferredSource = payload.preferredSource ? String(payload.preferredSource) : '';
   const preferredId = payload.preferredId ? String(payload.preferredId) : '';
-  const useChoice = preferredSource && preferredId;
-  const currentSource = useChoice ? preferredSource : candidates[0].source;
-  const currentId = useChoice ? preferredId : candidates[0].id;
 
-  const chosen =
-    candidates.find((cand) => cand.source === currentSource && cand.id === currentId) ||
-    candidates[0];
+  // Only honour the client's choice when it is actually among the candidates.
+  // Previously current_source/current_id were set from the requested pair even
+  // when it wasn't found, so they could describe a different source than the
+  // `detail` that was returned.
+  const preferred = candidates.find(
+    (cand) => cand.source === preferredSource && cand.id === preferredId,
+  );
+  const chosen = preferred || candidates[0];
 
   let detail;
   if (chosen.episodes?.length) {
     detail = chosen;
   } else {
-    const fetched = await fetchDetail(env, currentSource, currentId);
-    detail = fetched || chosen;
+    const { status, data } = await fetchDetailResult(env, chosen.source, chosen.id);
+    if (status === 'error') return c.json({ error: '播放源暂时不可用，请稍后重试' }, 502);
+    detail = data || chosen;
   }
 
   const title = String(payload.title || detail.title || candidates[0]?.title || '').trim();
@@ -103,8 +119,8 @@ export async function playSession(c) {
     detail,
     available_sources: candidates,
     search_title: String(payload.query || ''),
-    current_source: currentSource,
-    current_id: currentId,
+    current_source: chosen.source,
+    current_id: chosen.id,
     title,
     year,
     type,
