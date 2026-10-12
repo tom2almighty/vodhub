@@ -40,28 +40,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 9.15.0
+          bun-version: 1.4.3
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Check code (Biome)
-        run: pnpm check
+        run: bun run check
 
       - name: Type-check
-        run: pnpm typecheck
+        run: bun run typecheck
 
       - name: Build (Vite)
-        run: pnpm build
+        run: bun run build
 
   # ───────────────────────────────────────────────────────────────
   # Job 2 — 发布 GitHub Release（前端编译产物 zip，供直接部署 SaaS）
@@ -77,22 +76,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 9.15.0
+          bun-version: 1.4.3
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build frontend SPA
-        run: pnpm build
+        run: bun run build
 
       - name: Package dist artifact
         run: |
