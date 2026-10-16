@@ -1,14 +1,18 @@
-FROM oven/bun:1-alpine AS builder
+FROM node:22-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@12.9.1 --activate
 WORKDIR /app
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 COPY . .
-RUN bun run build
+RUN pnpm build
 
-FROM oven/bun:1-alpine AS prod-deps
+FROM node:22-alpine AS prod-deps
+RUN corepack enable && corepack prepare pnpm@12.9.1 --activate
 WORKDIR /app
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --production
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod
 
 FROM node:22-alpine AS runner
 RUN apk add --no-cache tini

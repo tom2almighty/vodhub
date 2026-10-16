@@ -8,21 +8,21 @@ vodhub is a Mac CMS (苹果CMS) video-source aggregator: a React + Vite SPA back
 
 ## Commands
 
-`bun` is the package manager.
+`pnpm` is the package manager (no `npm`/`yarn`). Its version is pinned in three places — `packageManager` in `package.json`, `pnpm/action-setup` in CI, and the corepack line in the `Dockerfile` — bump them together.
 
 | Command | Purpose |
 | --- | --- |
-| `bun run dev` | Vite dev server on `:3000`, with the Hono API mounted as dev middleware |
-| `bun run build` | `tsc -b && vite build` → outputs SPA to `dist/` |
-| `bun run typecheck` | `tsc --noEmit` |
-| `bun run check` | `biome check .` — lint + format check |
-| `bun run lint` / `bun run format` | Biome lint only / format and rewrite |
-| `bun run prod` | `node server.js` — production Node server (serves `dist/` + API + SPA fallback) |
-| `bun run preview` | Vite static preview of `dist/` (no API) |
+| `pnpm dev` | Vite dev server on `:3000`, with the Hono API mounted as dev middleware |
+| `pnpm build` | `tsc -b && vite build` → outputs SPA to `dist/` |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm check` | `biome check .` — lint + format check |
+| `pnpm lint` / `pnpm format` | Biome lint only / format and rewrite |
+| `pnpm prod` | `node server.js` — production Node server (serves `dist/` + API + SPA fallback) |
+| `pnpm preview` | Vite static preview of `dist/` (no API) |
 
 There are **no tests**. Linting/formatting is [Biome](https://biomejs.dev/) (`biome.json`) — there is no ESLint or Prettier. Note `tsc` only covers `src/` (see `tsconfig.json` `include`), so `server/*.mjs` is **not** type-checked; `node --check <file>` is the cheapest syntax gate for it.
 
-CI (`.github/workflows/docker-image.yml`) runs `bun run check` → `bun run typecheck` → `bun run build` in a `verify` job on pushes to `main`/`master` and on PRs. Treat those three passing as the bar before considering work done. The `release` and `docker` jobs are gated on a `v*` tag and only publish artifacts.
+CI (`.github/workflows/docker-image.yml`) runs `pnpm check` → `pnpm typecheck` → `pnpm build` in a `verify` job on pushes to `main`/`master` and on PRs. Treat those three passing as the bar before considering work done. The `release` and `docker` jobs are gated on a `v*` tag and only publish artifacts.
 
 ## Architecture
 
@@ -96,8 +96,9 @@ Source switching aborts the previous request, carries a sequence number so a sup
 ## Conventions & gotchas
 
 - **Path aliases**: `@/` → `src/`, `~/` → `public/`. Declared in `tsconfig.json` (types) **and** `vite.config.ts` (bundling) — update both.
+- **pnpm blocks dependency build scripts by default.** A new dep that needs a postinstall (native build, binary download) must be listed under `allowBuilds` in `pnpm-workspace.yaml` — otherwise it installs without running its script, with no error. `esbuild` is already listed.
 - **`@ouonnki/cms-core` resolution workaround**: the package ships a broken `"development"` export pointing at a non-existent `src/`. `vite.config.ts` aliases the bare specifier directly to its `dist/index.js` and sets `resolve.conditions` to exclude `development`. Only the server imports it (through `ssrLoadModule` in dev, and directly under Node in production), so it is not part of the client bundle. Don't "simplify" this away.
-- **shadcn components are the official `base-nova` sources.** `components.json` declares `style: "base-nova"` (Base UI) and `baseColor: "neutral"`; changing the style makes `bunx --bun shadcn add …` pull Radix components into a Base UI codebase. `src/index.css` imports `shadcn/tailwind.css` for the `data-open:` / `data-active:` / `data-disabled:` custom variants the components rely on. Registry-only `cn-*` marker classes and `IconPlaceholder` are not portable — substitute a concrete utility or a lucide icon.
+- **shadcn components are the official `base-nova` sources.** `components.json` declares `style: "base-nova"` (Base UI) and `baseColor: "neutral"`; changing the style makes `pnpm exec shadcn add …` pull Radix components into a Base UI codebase. `src/index.css` imports `shadcn/tailwind.css` for the `data-open:` / `data-active:` / `data-disabled:` custom variants the components rely on. Registry-only `cn-*` marker classes and `IconPlaceholder` are not portable — substitute a concrete utility or a lucide icon.
 - **Base UI puts positioning on the `Positioner`, not the `Popup`.** `Popup` is statically positioned, so a `z-*` class on it does nothing and the popup paints below any positive-z-index sibling (this is why the theme menu sat under the `z-40` navbar). Put `isolate z-50` on the `Positioner`.
 - **Tailwind v4, CSS-first**: there is no `tailwind.config.js`. Config lives in `src/index.css` via `@import 'tailwindcss'` + `@theme inline`, which bridges shadcn CSS variables (`:root`/`.dark`) into Tailwind utilities. Entrance animations are `@theme` keyframes (`animate-fade-in`, `animate-fade-in-up`) rather than a JS animation library, so the global `prefers-reduced-motion` rule covers them. Dark mode via `next-themes`; `index.html` carries an inline FOUC guard that must stay in sync with `ThemeProvider`.
 - **Official `base-nova` `Badge` has a fixed `h-5`** sized for `text-xs`. A call site that wants `text-sm` or extra padding must opt out with `h-auto`, otherwise the text is clipped by the badge's `overflow-hidden`.
