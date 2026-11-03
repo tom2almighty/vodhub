@@ -59,7 +59,12 @@ export default function SearchPage() {
             loading={isLoading}
             resultsCount={aggregated.length}
           />
-          <SearchResultsGrid items={aggregated} loading={isLoading} query={queryFromUrl} />
+          <SearchResultsGrid
+            items={aggregated}
+            loading={isLoading}
+            query={queryFromUrl}
+            noSources={stream.status === 'done' && stream.total === 0}
+          />
         </section>
       ) : (
         <SearchHistoryChips onPick={handlePick} />

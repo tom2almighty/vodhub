@@ -66,6 +66,8 @@ Client side: `src/lib/auth.ts` stores the token in `localStorage` (persist) or `
 
 `server/lib/cms.mjs` builds a `@ouonnki/cms-core` client (fetch adapter, direct proxy strategy, `SEARCH_CONCURRENCY`-bounded) and maps the library's `VideoItem`/detail shapes onto the app's flat `SearchResult` shape (see `src/lib/types.ts`). `server/lib/sources.mjs` loads source definitions from `SOURCES_URL` (remote JSON, TTL-cached, TTL configurable) or `SOURCES_JSON` (inline), normalizing/validating each. It serves the last known-good list when the upstream fails and retries after a short backoff — **never cache a transient failure for the full TTL**, that silently disables search for the whole window.
 
+`GET /api/sources` returns the normalized list as `{ items: [{ id, name, isEnabled }] }` for the client settings panel; it deliberately omits `url` (upstream URLs can carry credentials). Search endpoints accept `exclude=<comma-separated ids>` and `POST /api/play-session` accepts `excludedSources: string[]`; both only narrow the subscription's `isEnabled` set, never widen it. Exclusions apply to search and `mode: 'search'` auto-matching — direct/group playback of an existing title stays available.
+
 `GET /api/search-stream` runs an aggregated search and streams results as **NDJSON** (`start`/`result`/`progress`/`complete`/`error` events) driven by the cms-core event emitter; the `complete` event reports the sources that actually completed, not the number requested. `enqueue` must stay wrapped in try/catch — a client disconnect throws there, and an unguarded throw propagates into cms-core's event handler, which catches and logs, silently losing every later event. The client (`src/lib/api/sources.ts` `searchStream`) parses the stream and **falls back to the non-streaming `GET /api/search`** if the streaming response isn't usable.
 
 ### Image proxy
@@ -82,6 +84,8 @@ Client side: `src/lib/auth.ts` stores the token in `localStorage` (persist) or `
 ### Client-side persistence (no server state)
 
 `src/lib/db.ts` is a `localStorage`-backed store for **play records** (watch progress + history), **search history**, and two timestamped caches (**recommendations**, **Douban categories**). All four are version-gated on `CACHE_VERSION` — bump it to invalidate old shapes. The play-record and search-history mutators **return a boolean** for write success so callers can surface a full quota instead of silently dropping data; play records are capped at the 200 most recent.
+
+Per-source search toggles live in `src/lib/sourcePrefs.ts` under a **separate** localStorage key (`vodhub_source_prefs`), not in the `CACHE_VERSION`-gated store — bumping that version wipes play records and search history, and the toggle should not. Only disabled ids are stored, so new sources default to enabled and stale ids are harmless.
 
 Updates broadcast through custom DOM events (`playRecordsUpdated`, `searchHistoryUpdated`) that hooks subscribe to, and a module-level `storage` listener re-broadcasts them when another tab changes the store — the custom events alone never cross tabs.
 

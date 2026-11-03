@@ -2,6 +2,7 @@ import type { DoubanKind } from '@/lib/api/douban';
 
 export const queryKeys = {
   site: ['site'] as const,
+  sources: ['sources'] as const,
   authVerify: ['auth', 'verify'] as const,
   recommendations: ['recommendations'] as const,
   douban: (params: { kind: DoubanKind; type: string }) => ['douban', params] as const,

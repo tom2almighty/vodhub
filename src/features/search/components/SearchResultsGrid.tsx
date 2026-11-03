@@ -19,9 +19,16 @@ interface SearchResultsGridProps {
   items: AggregatedItem[];
   loading: boolean;
   query: string;
+  /** True when the search ran against zero active sources. */
+  noSources?: boolean;
 }
 
-export function SearchResultsGrid({ items, loading, query }: SearchResultsGridProps) {
+export function SearchResultsGrid({
+  items,
+  loading,
+  query,
+  noSources = false,
+}: SearchResultsGridProps) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -55,8 +62,10 @@ export function SearchResultsGrid({ items, loading, query }: SearchResultsGridPr
           <SearchX />
         </EmptyMedia>
         <EmptyHeader>
-          <EmptyTitle>未找到相关内容</EmptyTitle>
-          <EmptyDescription>换个关键词试试</EmptyDescription>
+          <EmptyTitle>{noSources ? '当前没有可用的视频源' : '未找到相关内容'}</EmptyTitle>
+          <EmptyDescription>
+            {noSources ? '请在导航栏的视频源设置中启用至少一个源' : '换个关键词试试'}
+          </EmptyDescription>
         </EmptyHeader>
       </Empty>
     );

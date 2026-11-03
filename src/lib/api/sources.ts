@@ -1,9 +1,16 @@
+import { getDisabledSourceIds } from '@/lib/sourcePrefs';
 import type { SearchResult } from '@/lib/types';
 import { apiFetch, apiJson } from './client';
 
 // ===== types =====
 
 export type PlaySessionMode = 'direct' | 'group' | 'search';
+
+export interface SourceOption {
+  id: string;
+  name: string;
+  isEnabled: boolean;
+}
 
 export interface PlaySessionPayload {
   mode: PlaySessionMode;
@@ -21,6 +28,7 @@ export interface PlaySessionPayload {
   keyword?: string;
   expectedTitle?: string;
   expectedYear?: string;
+  excludedSources?: string[];
 }
 
 export interface PlaySessionResponse {
@@ -41,7 +49,20 @@ export interface SearchStreamCallbacks {
   onComplete(totalResults: number, completedSources: number): void;
 }
 
+// ===== sources =====
+
+export async function fetchSources(signal?: AbortSignal): Promise<SourceOption[]> {
+  const data = await apiJson<{ items?: SourceOption[] }>('/api/sources', { signal });
+  return data.items || [];
+}
+
 // ===== search =====
+
+/** Exclusion list shared by every search entry point. */
+function excludeQuery(): string {
+  const disabled = getDisabledSourceIds();
+  return disabled.size > 0 ? `&exclude=${encodeURIComponent([...disabled].join(','))}` : '';
+}
 
 export async function searchAllSources(
   query: string,
@@ -50,7 +71,7 @@ export async function searchAllSources(
   const trimmed = query.trim();
   if (!trimmed) return [];
   const data = await apiJson<{ items?: SearchResult[] }>(
-    `/api/search?q=${encodeURIComponent(trimmed)}`,
+    `/api/search?q=${encodeURIComponent(trimmed)}${excludeQuery()}`,
     { signal },
   );
   return data.items || [];
@@ -65,7 +86,7 @@ async function searchWithJsonFallback(
     items?: SearchResult[];
     totalSources?: number;
     completedSources?: number;
-  }>(`/api/search?q=${encodeURIComponent(query)}`, { signal });
+  }>(`/api/search?q=${encodeURIComponent(query)}${excludeQuery()}`, { signal });
   const total = data.totalSources || 0;
   const completed = data.completedSources || total;
   cb.onStart(total);
@@ -97,7 +118,9 @@ export async function searchStream(
 
   let resp: Response;
   try {
-    resp = await apiFetch(`/api/search-stream?q=${encodeURIComponent(trimmed)}`, { signal });
+    resp = await apiFetch(`/api/search-stream?q=${encodeURIComponent(trimmed)}${excludeQuery()}`, {
+      signal,
+    });
   } catch (err) {
     if ((err as Error)?.name === 'AbortError') return;
     throw err;
@@ -193,10 +216,13 @@ export async function createPlaySession(
   payload: PlaySessionPayload,
   signal?: AbortSignal,
 ): Promise<PlaySessionResponse> {
+  const disabled = [...getDisabledSourceIds()];
   return apiJson<PlaySessionResponse>('/api/play-session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    // Only `mode: 'search'` uses the exclusion list; direct/group playback of
+    // an existing title stays available even if its source is toggled off.
+    body: JSON.stringify(disabled.length ? { ...payload, excludedSources: disabled } : payload),
     signal,
   });
 }

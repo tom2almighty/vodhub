@@ -106,3 +106,26 @@ export async function findSource(env, id) {
   const sources = await loadSources(env);
   return sources.find((s) => s.id === id) || null;
 }
+
+const MAX_EXCLUDED_SOURCES = 500;
+
+/** Parses a comma-separated list (query param) or an array (JSON body). */
+export function parseExcludedSources(value) {
+  const raw = Array.isArray(value) ? value : String(value || '').split(',');
+  const ids = new Set();
+  for (const item of raw.slice(0, MAX_EXCLUDED_SOURCES)) {
+    const id = String(item || '').trim();
+    if (id) ids.add(id);
+  }
+  return ids;
+}
+
+/**
+ * Sources the caller may search. The subscription's `isEnabled` is the upper
+ * bound — client preferences can only narrow it, never re-enable a source the
+ * subscription disabled.
+ */
+export async function loadActiveSources(env, excluded = new Set()) {
+  const sources = await loadSources(env);
+  return sources.filter((s) => s.isEnabled && !excluded.has(s.id));
+}

@@ -57,6 +57,8 @@ npx wrangler pages deploy dist
 ]
 ```
 
+登录后可在导航栏的“视频源设置”里关闭个别源。开关保存在浏览器 localStorage，只影响搜索聚合与自动匹配；历史记录和直达播放不受影响。
+
 ## 重要提醒
 
 > [!IMPORTANT]

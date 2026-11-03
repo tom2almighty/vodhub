@@ -9,6 +9,7 @@ import * as image from './routes/image.mjs';
 import * as play from './routes/play-session.mjs';
 import * as search from './routes/search.mjs';
 import * as site from './routes/site.mjs';
+import * as sources from './routes/sources.mjs';
 
 const PUBLIC_ROUTES = new Set(['/auth/login', '/auth/verify', '/site-config', '/health']);
 
@@ -43,6 +44,7 @@ export function createApp() {
   app.get('/auth/verify', auth.verify);
   app.get('/health', (c) => c.json({ ok: true }));
   app.get('/site-config', site.siteConfig);
+  app.get('/sources', sources.listSources);
   app.get('/search-stream', search.searchStream);
   app.get('/search', search.search);
   app.get('/detail', detail.detail);

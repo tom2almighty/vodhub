@@ -1,10 +1,11 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Settings2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/features/auth/AuthContext';
+import { SourcePreferencesSheet } from '@/features/settings/components/SourcePreferencesSheet';
 import { cn } from '@/lib/utils';
 import { BrandMark } from './BrandMark';
 import { NAV_LINKS } from './navLinks';
@@ -51,6 +52,7 @@ function LogoutButton() {
 export function Navbar() {
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -80,10 +82,20 @@ export function Navbar() {
           <NavLinks pathname={location.pathname} />
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="视频源设置"
+            title="视频源设置"
+            onClick={() => setSourcesOpen(true)}
+          >
+            <Settings2 className="h-4 w-4" />
+          </Button>
           <ThemeToggle />
           <LogoutButton />
         </div>
       </div>
+      <SourcePreferencesSheet open={sourcesOpen} onOpenChange={setSourcesOpen} />
     </nav>
   );
 }

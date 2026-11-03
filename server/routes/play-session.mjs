@@ -1,5 +1,5 @@
 import { normalizeYear } from '../lib/cms.mjs';
-import { findSource, loadSources } from '../lib/sources.mjs';
+import { findSource, loadSources, parseExcludedSources } from '../lib/sources.mjs';
 import { fetchDetailResult } from './detail.mjs';
 import { aggregate } from './search.mjs';
 
@@ -66,7 +66,14 @@ async function resolveCandidates(payload, env) {
   if (mode === 'search') {
     const keyword = String(payload.keyword || '').trim();
     if (!keyword) throw new Error('缺少搜索关键词');
-    const { items } = await aggregate(keyword, env);
+    // Auto-matching is a search; direct/group playback keeps working even for
+    // sources the user turned off, so history stays playable.
+    const { items } = await aggregate(
+      keyword,
+      env,
+      undefined,
+      parseExcludedSources(payload.excludedSources),
+    );
     if (items.length === 0) throw new Error('未找到匹配播放源');
     return items;
   }

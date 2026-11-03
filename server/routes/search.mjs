@@ -1,5 +1,5 @@
 import { createClient, mapItem } from '../lib/cms.mjs';
-import { loadSources } from '../lib/sources.mjs';
+import { loadActiveSources, parseExcludedSources } from '../lib/sources.mjs';
 
 const MAX_QUERY_LENGTH = 100;
 
@@ -7,10 +7,14 @@ function readQuery(c) {
   return (c.req.query('q') || '').trim().slice(0, MAX_QUERY_LENGTH);
 }
 
+function readExcluded(c) {
+  return parseExcludedSources(c.req.query('exclude'));
+}
+
 export async function search(c) {
   const query = readQuery(c);
   if (!query) return c.json({ error: '缺少搜索关键词' }, 400);
-  return c.json(await aggregate(query, c.env, c.req.raw.signal));
+  return c.json(await aggregate(query, c.env, c.req.raw.signal, readExcluded(c)));
 }
 
 export function searchStream(c) {
@@ -19,6 +23,7 @@ export function searchStream(c) {
   if (!query) return c.json({ error: '缺少搜索关键词' }, 400);
 
   const signal = c.req.raw.signal;
+  const excluded = readExcluded(c);
   const encoder = new TextEncoder();
   const body = new ReadableStream({
     async start(controller) {
@@ -49,7 +54,7 @@ export function searchStream(c) {
       };
 
       try {
-        const sources = (await loadSources(env)).filter((s) => s.isEnabled);
+        const sources = await loadActiveSources(env, excluded);
         if (!send({ type: 'start', totalSources: sources.length })) return;
 
         if (sources.length === 0) {
@@ -111,8 +116,8 @@ export function searchStream(c) {
   });
 }
 
-export async function aggregate(query, env, signal) {
-  const sources = (await loadSources(env)).filter((s) => s.isEnabled);
+export async function aggregate(query, env, signal, excluded = new Set()) {
+  const sources = await loadActiveSources(env, excluded);
   if (!query || sources.length === 0) {
     return { items: [], totalSources: sources.length, completedSources: 0 };
   }
