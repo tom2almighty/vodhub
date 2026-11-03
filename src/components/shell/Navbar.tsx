@@ -27,6 +27,7 @@ function NavLinks({ pathname }: { pathname: string }) {
               <TabsTrigger
                 key={l.href}
                 value={l.href}
+                nativeButton={false}
                 render={<Link to={l.href} aria-label={l.label} className="gap-1.5" />}
               >
                 <Icon className="h-3.5 w-3.5" strokeWidth={2} />
