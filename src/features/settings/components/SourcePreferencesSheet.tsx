@@ -1,8 +1,8 @@
 import { Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -13,8 +13,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
+import type { SourceOption } from '@/lib/api/sources';
 import { setSourceEnabled, setSourcesEnabled } from '@/lib/sourcePrefs';
+import { cn } from '@/lib/utils';
 import { useSourcePrefs } from '../hooks/useSourcePrefs';
 import { useSources } from '../hooks/useSources';
 
@@ -46,6 +47,8 @@ export function SourcePreferencesSheet({ open, onOpenChange }: SourcePreferences
       (s) => s.name.toLowerCase().includes(keyword) || s.id.toLowerCase().includes(keyword),
     );
   }, [filter, sources]);
+  const visibleEnabled = visible.filter((s) => s.isEnabled);
+  const visibleDisabled = visible.filter((s) => !s.isEnabled);
 
   const toggle = (id: string, enabled: boolean) => {
     if (!setSourceEnabled(id, enabled)) toast.error('浏览器存储不可用，设置未保存');
@@ -63,21 +66,57 @@ export function SourcePreferencesSheet({ open, onOpenChange }: SourcePreferences
     }
   };
 
+  const renderSource = (source: SourceOption): ReactNode => {
+    const checkboxId = `source-toggle-${source.id}`;
+    const checked = source.isEnabled && !disabledIds.has(source.id);
+
+    return (
+      <li key={source.id}>
+        <div
+          title={source.id}
+          className={cn(
+            'flex items-center gap-2 rounded-md border px-2 py-2 transition-colors',
+            checked
+              ? 'border-primary/40 bg-accent hover:bg-accent/80'
+              : 'border-border hover:bg-muted/60',
+            !source.isEnabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
+          )}
+        >
+          <Checkbox
+            id={checkboxId}
+            checked={checked}
+            disabled={!source.isEnabled}
+            onCheckedChange={(value) => toggle(source.id, value)}
+          />
+          <label
+            htmlFor={checkboxId}
+            className={cn(
+              'min-w-0 flex-1 truncate text-sm',
+              source.isEnabled ? 'cursor-pointer' : 'cursor-not-allowed',
+            )}
+          >
+            {source.name}
+          </label>
+        </div>
+      </li>
+    );
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:max-w-md"
+        className="data-[side=right]:w-full pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:max-w-md"
       >
         <SheetHeader>
           <SheetTitle>视频源</SheetTitle>
           <SheetDescription>
-            关闭的源不参与搜索，历史记录仍可直接播放。设置只保存在当前浏览器。
+            关闭的源不参与搜索和自动匹配，历史记录仍可直接播放。设置只保存在当前浏览器。
           </SheetDescription>
         </SheetHeader>
 
-        {sources.length > SEARCH_FILTER_THRESHOLD && (
-          <div className="px-4">
+        <div className="flex flex-col gap-3 px-4">
+          {sources.length > SEARCH_FILTER_THRESHOLD && (
             <div className="relative">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -88,30 +127,29 @@ export function SourcePreferencesSheet({ open, onOpenChange }: SourcePreferences
                 aria-label="搜索视频源"
               />
             </div>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between gap-3 px-4">
-          <span className="text-xs tabular-nums text-muted-foreground">
-            已启用 {activeCount} / {sources.length} 个源
-          </span>
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => toggleAll(true)}
-              disabled={subscribed.length === 0 || activeCount === subscribed.length}
-            >
-              全开
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => toggleAll(false)}
-              disabled={activeCount === 0}
-            >
-              全关
-            </Button>
+          )}
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs tabular-nums text-muted-foreground">
+              已启用 {activeCount} / {subscribed.length} 个源
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toggleAll(true)}
+                disabled={subscribed.length === 0 || activeCount === subscribed.length}
+              >
+                全开
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toggleAll(false)}
+                disabled={activeCount === 0}
+              >
+                全关
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -135,31 +173,19 @@ export function SourcePreferencesSheet({ open, onOpenChange }: SourcePreferences
                 {sources.length === 0 ? '暂无可用视频源' : '没有匹配的源'}
               </p>
             ) : (
-              <ul className="divide-y divide-border">
-                {visible.map((source) => (
-                  <li key={source.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="min-w-0 truncate text-sm">{source.name}</span>
-                        {!source.isEnabled && (
-                          <Badge variant="secondary" className="shrink-0">
-                            订阅已停用
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {source.id}
-                      </span>
-                    </div>
-                    <Switch
-                      checked={source.isEnabled && !disabledIds.has(source.id)}
-                      disabled={!source.isEnabled}
-                      onCheckedChange={(checked) => toggle(source.id, checked)}
-                      aria-label={`启用 ${source.name}`}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <>
+                <ul className="grid grid-cols-2 gap-1.5">{visibleEnabled.map(renderSource)}</ul>
+                {visibleDisabled.length > 0 && (
+                  <div className="mt-4">
+                    <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">
+                      订阅已停用
+                    </p>
+                    <ul className="grid grid-cols-2 gap-1.5">
+                      {visibleDisabled.map(renderSource)}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </ScrollArea>

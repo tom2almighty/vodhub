@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { searchStream } from '@/lib/api/sources';
+import { subscribeToSourcePrefs } from '@/lib/sourcePrefs';
 import type { SearchResult } from '@/lib/types';
 
 export type SearchStatus = 'idle' | 'loading' | 'done' | 'error';
@@ -12,10 +13,26 @@ export interface SearchStreamState {
 }
 
 const INITIAL: SearchStreamState = { items: [], total: 0, completed: 0, status: 'idle' };
+// Toggling several sources in a row should trigger one request, not one per tap.
+const PREF_REFRESH_DELAY_MS = 500;
 
 export function useSearchStream(query: string): SearchStreamState {
   const [state, setState] = useState<SearchStreamState>(INITIAL);
+  const [revision, setRevision] = useState(0);
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = subscribeToSourcePrefs(() => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setRevision((value) => value + 1), PREF_REFRESH_DELAY_MS);
+    });
+    return () => {
+      if (timer) clearTimeout(timer);
+      unsubscribe();
+    };
+  }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: revision forces a re-run when source prefs change
   useEffect(() => {
     const trimmed = query.trim();
     if (!trimmed) {
@@ -40,7 +57,7 @@ export function useSearchStream(query: string): SearchStreamState {
     });
 
     return () => controller.abort();
-  }, [query]);
+  }, [query, revision]);
 
   return state;
 }

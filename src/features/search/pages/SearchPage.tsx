@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { SourceFilter } from '@/features/settings/components/SourceFilter';
 import { addSearchHistory } from '@/lib/db';
 import { SearchBar } from '../components/SearchBar';
 import { SearchHistoryChips } from '../components/SearchHistoryChips';
@@ -49,7 +50,12 @@ export default function SearchPage() {
 
   return (
     <div className="app-page">
-      <SearchBar value={input} onChange={setInput} onSubmit={handleSubmit} />
+      <SearchBar
+        value={input}
+        onChange={setInput}
+        onSubmit={handleSubmit}
+        action={<SourceFilter />}
+      />
 
       {showingResults ? (
         <section>

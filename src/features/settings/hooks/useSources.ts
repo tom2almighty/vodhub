@@ -4,8 +4,11 @@ import { queryKeys } from '@/lib/query/keys';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
-/** `enabled` keeps the list request out of the initial page load. */
-export function useSources(enabled: boolean) {
+/**
+ * The search page needs the list on mount for its enabled/total count; the
+ * settings sheet reuses the same cached query when it opens.
+ */
+export function useSources(enabled = true) {
   return useQuery({
     queryKey: queryKeys.sources,
     queryFn: ({ signal }) => fetchSources(signal),

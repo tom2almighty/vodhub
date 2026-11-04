@@ -64,7 +64,7 @@ export function SearchResultsGrid({
         <EmptyHeader>
           <EmptyTitle>{noSources ? '当前没有可用的视频源' : '未找到相关内容'}</EmptyTitle>
           <EmptyDescription>
-            {noSources ? '请在导航栏的视频源设置中启用至少一个源' : '换个关键词试试'}
+            {noSources ? '请在搜索框旁的“视频源”中启用至少一个源' : '换个关键词试试'}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
