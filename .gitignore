@@ -1,8 +1,8 @@
 # Binaries & build outputs
 bin/
 dist/
-vodhub
-vodhub.exe
+/vodhub
+/vodhub.exe
 web/dist/*
 !web/dist/.gitkeep
 web/node_modules/

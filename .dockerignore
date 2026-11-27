@@ -3,8 +3,8 @@
 data
 submodule
 bin
-vodhub
-vodhub.exe
+/vodhub
+/vodhub.exe
 .env
 .env.*
 web/node_modules
