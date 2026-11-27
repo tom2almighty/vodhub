@@ -1,4 +1,4 @@
-import { getDisabledSourceIds } from '@/lib/sourcePrefs';
+import { getExcludedSourceIds, getIncludedSourceIds } from '@/lib/sourcePrefs';
 import type { SearchResult } from '@/lib/types';
 import { apiFetch, apiJson } from './client';
 
@@ -29,6 +29,7 @@ export interface PlaySessionPayload {
   expectedTitle?: string;
   expectedYear?: string;
   excludedSources?: string[];
+  includedSources?: string[];
 }
 
 export interface PlaySessionResponse {
@@ -58,10 +59,14 @@ export async function fetchSources(signal?: AbortSignal): Promise<SourceOption[]
 
 // ===== search =====
 
-/** Exclusion list shared by every search entry point. */
-function excludeQuery(): string {
-  const disabled = getDisabledSourceIds();
-  return disabled.size > 0 ? `&exclude=${encodeURIComponent([...disabled].join(','))}` : '';
+/** Override params shared by every search entry point. */
+function sourceOverrideQuery(): string {
+  const excluded = getExcludedSourceIds();
+  const included = getIncludedSourceIds();
+  let params = '';
+  if (excluded.length > 0) params += `&exclude=${encodeURIComponent(excluded.join(','))}`;
+  if (included.length > 0) params += `&include=${encodeURIComponent(included.join(','))}`;
+  return params;
 }
 
 export async function searchAllSources(
@@ -71,7 +76,7 @@ export async function searchAllSources(
   const trimmed = query.trim();
   if (!trimmed) return [];
   const data = await apiJson<{ items?: SearchResult[] }>(
-    `/api/search?q=${encodeURIComponent(trimmed)}${excludeQuery()}`,
+    `/api/search?q=${encodeURIComponent(trimmed)}${sourceOverrideQuery()}`,
     { signal },
   );
   return data.items || [];
@@ -86,7 +91,7 @@ async function searchWithJsonFallback(
     items?: SearchResult[];
     totalSources?: number;
     completedSources?: number;
-  }>(`/api/search?q=${encodeURIComponent(query)}${excludeQuery()}`, { signal });
+  }>(`/api/search?q=${encodeURIComponent(query)}${sourceOverrideQuery()}`, { signal });
   const total = data.totalSources || 0;
   const completed = data.completedSources || total;
   cb.onStart(total);
@@ -118,9 +123,12 @@ export async function searchStream(
 
   let resp: Response;
   try {
-    resp = await apiFetch(`/api/search-stream?q=${encodeURIComponent(trimmed)}${excludeQuery()}`, {
-      signal,
-    });
+    resp = await apiFetch(
+      `/api/search-stream?q=${encodeURIComponent(trimmed)}${sourceOverrideQuery()}`,
+      {
+        signal,
+      },
+    );
   } catch (err) {
     if ((err as Error)?.name === 'AbortError') return;
     throw err;
@@ -216,13 +224,17 @@ export async function createPlaySession(
   payload: PlaySessionPayload,
   signal?: AbortSignal,
 ): Promise<PlaySessionResponse> {
-  const disabled = [...getDisabledSourceIds()];
+  const excluded = getExcludedSourceIds();
+  const included = getIncludedSourceIds();
+  const body: PlaySessionPayload = { ...payload };
+  if (excluded.length) body.excludedSources = excluded;
+  if (included.length) body.includedSources = included;
   return apiJson<PlaySessionResponse>('/api/play-session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    // Only `mode: 'search'` uses the exclusion list; direct/group playback of
-    // an existing title stays available even if its source is toggled off.
-    body: JSON.stringify(disabled.length ? { ...payload, excludedSources: disabled } : payload),
+    // Only `mode: 'search'` uses the source override lists; direct/group
+    // playback of an existing title stays available regardless of toggle state.
+    body: JSON.stringify(body),
     signal,
   });
 }

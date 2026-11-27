@@ -10,13 +10,13 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { AggregatedItem } from '../lib/aggregate';
+import type { SearchDisplayItem } from '../lib/aggregate';
 
 const INITIAL_BATCH = 24;
 const BATCH_SIZE = 18;
 
 interface SearchResultsGridProps {
-  items: AggregatedItem[];
+  items: SearchDisplayItem[];
   loading: boolean;
   query: string;
   /** True when the search ran against zero active sources. */
@@ -85,7 +85,7 @@ export function SearchResultsGrid({
     <>
       <PosterGrid>
         {visibleItems.map((item, i) => {
-          const primary = item.group[0];
+          const { primary, candidates } = item;
           return (
             // Entrance-only animation. The previous `layout` prop forced a
             // layout measurement of every mounted card on each batch append.
@@ -102,10 +102,10 @@ export function SearchResultsGrid({
                 source={primary.source}
                 id={primary.id}
                 sourceName={primary.source_name}
-                sourceNames={item.group.map((g) => g.source_name)}
+                sourceNames={item.sourceNames}
                 episodes={primary.episodes?.length || 0}
                 doubanId={item.douban_id}
-                candidates={item.group.length > 1 ? item.group : undefined}
+                candidates={candidates.length > 1 ? candidates : undefined}
                 query={query}
               />
             </div>

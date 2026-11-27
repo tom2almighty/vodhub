@@ -1,5 +1,5 @@
-import { createClient, mapItem } from '../lib/cms.mjs';
-import { loadActiveSources, parseExcludedSources } from '../lib/sources.mjs';
+import { createClient, filterRelevantItems, mapItem, sortByRelevance } from '../lib/cms.mjs';
+import { loadActiveSources, parseSourceIds } from '../lib/sources.mjs';
 
 const MAX_QUERY_LENGTH = 100;
 
@@ -8,13 +8,17 @@ function readQuery(c) {
 }
 
 function readExcluded(c) {
-  return parseExcludedSources(c.req.query('exclude'));
+  return parseSourceIds(c.req.query('exclude'));
+}
+
+function readIncluded(c) {
+  return parseSourceIds(c.req.query('include'));
 }
 
 export async function search(c) {
   const query = readQuery(c);
   if (!query) return c.json({ error: '缺少搜索关键词' }, 400);
-  return c.json(await aggregate(query, c.env, c.req.raw.signal, readExcluded(c)));
+  return c.json(await aggregate(query, c.env, c.req.raw.signal, readExcluded(c), readIncluded(c)));
 }
 
 export function searchStream(c) {
@@ -24,6 +28,7 @@ export function searchStream(c) {
 
   const signal = c.req.raw.signal;
   const excluded = readExcluded(c);
+  const included = readIncluded(c);
   const encoder = new TextEncoder();
   const body = new ReadableStream({
     async start(controller) {
@@ -54,7 +59,7 @@ export function searchStream(c) {
       };
 
       try {
-        const sources = await loadActiveSources(env, excluded);
+        const sources = await loadActiveSources(env, excluded, included);
         if (!send({ type: 'start', totalSources: sources.length })) return;
 
         if (sources.length === 0) {
@@ -69,7 +74,8 @@ export function searchStream(c) {
         let sawProgress = false;
 
         const unsubResult = cms.on('search:result', (e) => {
-          const items = e.items.map(mapItem);
+          const items = filterRelevantItems(e.items.map(mapItem), query);
+          if (items.length === 0) return;
           total += items.length;
           send({
             type: 'result',
@@ -116,15 +122,16 @@ export function searchStream(c) {
   });
 }
 
-export async function aggregate(query, env, signal, excluded = new Set()) {
-  const sources = await loadActiveSources(env, excluded);
+export async function aggregate(query, env, signal, excluded = new Set(), included = new Set()) {
+  const sources = await loadActiveSources(env, excluded, included);
   if (!query || sources.length === 0) {
     return { items: [], totalSources: sources.length, completedSources: 0 };
   }
   const cms = createClient(env);
   const raw = await cms.aggregatedSearch(query, sources, 1, signal);
+  const items = sortByRelevance(filterRelevantItems(raw.map(mapItem), query), query);
   return {
-    items: raw.map(mapItem),
+    items,
     totalSources: sources.length,
     completedSources: sources.length,
   };

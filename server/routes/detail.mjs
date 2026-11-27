@@ -10,11 +10,12 @@ import { findSource } from '../lib/sources.mjs';
  */
 export async function fetchDetailResult(env, sourceId, id) {
   const source = await findSource(env, sourceId);
-  if (!source?.isEnabled) return { status: 'not-found', data: null };
+  if (!source) return { status: 'not-found', data: null };
 
   const cms = createClient(env);
   try {
-    const result = await cms.getDetail(id, source);
+    const activeSource = source.isEnabled ? source : { ...source, isEnabled: true };
+    const result = await cms.getDetail(id, activeSource);
     if (!result?.success) return { status: 'not-found', data: null };
     return { status: 'ok', data: mapDetail(result, source, id) };
   } catch (err) {

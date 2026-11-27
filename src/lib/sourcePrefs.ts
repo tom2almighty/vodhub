@@ -1,36 +1,48 @@
 const STORAGE_KEY = 'vodhub_source_prefs';
 const EVENT = 'sourcePrefsUpdated';
 
+export type SourceOverrides = Record<string, boolean>;
+
 /**
- * Source toggles are a per-browser preference, not server state. Only disabled
- * ids are stored so newly subscribed sources are enabled by default; ids that
- * disappear from the subscription stay in the list harmlessly and recover their
- * old state if the source comes back.
+ * Per-browser overrides on top of the subscription's `isEnabled` defaults.
+ * - missing key: follow the subscription's `isEnabled`
+ * - `true`: manually enabled by the user (even if default-off in subscription)
+ * - `false`: manually disabled by the user (even if default-on in subscription)
  */
-function read(): Set<string> {
-  if (typeof window === 'undefined') return new Set();
+function read(): SourceOverrides {
+  if (typeof window === 'undefined') return {};
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return new Set();
+    if (!raw) return {};
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return new Set();
-    return new Set(parsed.filter((id): id is string => typeof id === 'string'));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      localStorage.removeItem(STORAGE_KEY);
+      return {};
+    }
+    const result: SourceOverrides = {};
+    for (const [id, value] of Object.entries(parsed)) {
+      if (typeof value === 'boolean' && id) result[id] = value;
+    }
+    return result;
   } catch {
-    // Unparseable payload: drop it instead of reparsing garbage on every read.
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
       /* storage unavailable */
     }
-    return new Set();
+    return {};
   }
 }
 
 /** @returns false when storage is blocked or the quota is full. */
-function write(disabled: Set<string>): boolean {
+function write(overrides: SourceOverrides): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...disabled]));
+    if (Object.keys(overrides).length === 0) {
+      localStorage.removeItem(STORAGE_KEY);
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+    }
     return true;
   } catch {
     return false;
@@ -42,28 +54,58 @@ function dispatch(): void {
   window.dispatchEvent(new CustomEvent(EVENT));
 }
 
-export function getDisabledSourceIds(): Set<string> {
+export function getSourceOverrides(): SourceOverrides {
   return read();
 }
 
+export function getExcludedSourceIds(): string[] {
+  const overrides = read();
+  return Object.entries(overrides)
+    .filter(([, enabled]) => !enabled)
+    .map(([id]) => id);
+}
+
+export function getIncludedSourceIds(): string[] {
+  const overrides = read();
+  return Object.entries(overrides)
+    .filter(([, enabled]) => enabled)
+    .map(([id]) => id);
+}
+
+export function isSourceActive(
+  source: { id: string; isEnabled: boolean },
+  overrides: SourceOverrides,
+): boolean {
+  return overrides[source.id] ?? source.isEnabled;
+}
+
 /** @returns false when the preference could not be persisted. */
-export function setSourceEnabled(id: string, enabled: boolean): boolean {
-  const disabled = read();
-  if (enabled) disabled.delete(id);
-  else disabled.add(id);
-  const stored = write(disabled);
+export function setSourceOverride(id: string, enabled: boolean, defaultEnabled: boolean): boolean {
+  const overrides = read();
+  if (enabled === defaultEnabled) delete overrides[id];
+  else overrides[id] = enabled;
+  const stored = write(overrides);
   dispatch();
   return stored;
 }
 
-/** Applies the same state to a batch (same-all / none-all). */
-export function setSourcesEnabled(ids: string[], enabled: boolean): boolean {
-  const disabled = read();
-  for (const id of ids) {
-    if (enabled) disabled.delete(id);
-    else disabled.add(id);
+/** Applies the same state to a batch (enable-all / disable-all). */
+export function setSourcesOverride(
+  sources: Array<{ id: string; isEnabled: boolean }>,
+  enabled: boolean,
+): boolean {
+  const overrides = read();
+  for (const s of sources) {
+    if (enabled === s.isEnabled) delete overrides[s.id];
+    else overrides[s.id] = enabled;
   }
-  const stored = write(disabled);
+  const stored = write(overrides);
+  dispatch();
+  return stored;
+}
+
+export function resetSourceOverrides(): boolean {
+  const stored = write({});
   dispatch();
   return stored;
 }
@@ -75,8 +117,7 @@ export function subscribeToSourcePrefs(callback: () => void): () => void {
   return () => window.removeEventListener(EVENT, handler);
 }
 
-// The custom event above is same-document only; `storage` fires in the other
-// tabs, so re-broadcast it to keep two tabs in sync.
+// The custom event above is same-document only; `storage` fires in other tabs.
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (event) => {
     if (event.key !== STORAGE_KEY) return;

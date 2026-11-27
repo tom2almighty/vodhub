@@ -107,13 +107,13 @@ export async function findSource(env, id) {
   return sources.find((s) => s.id === id) || null;
 }
 
-const MAX_EXCLUDED_SOURCES = 500;
+const MAX_SOURCE_IDS = 500;
 
 /** Parses a comma-separated list (query param) or an array (JSON body). */
-export function parseExcludedSources(value) {
+export function parseSourceIds(value) {
   const raw = Array.isArray(value) ? value : String(value || '').split(',');
   const ids = new Set();
-  for (const item of raw.slice(0, MAX_EXCLUDED_SOURCES)) {
+  for (const item of raw.slice(0, MAX_SOURCE_IDS)) {
     const id = String(item || '').trim();
     if (id) ids.add(id);
   }
@@ -121,11 +121,14 @@ export function parseExcludedSources(value) {
 }
 
 /**
- * Sources the caller may search. The subscription's `isEnabled` is the upper
- * bound — client preferences can only narrow it, never re-enable a source the
- * subscription disabled.
+ * Sources active for this search request. The subscription's `isEnabled` sets
+ * the default; callers may exclude default-on sources or explicitly include
+ * default-off sources. Returned copies always carry `isEnabled: true` so
+ * cms-core executes every selected source.
  */
-export async function loadActiveSources(env, excluded = new Set()) {
+export async function loadActiveSources(env, excluded = new Set(), included = new Set()) {
   const sources = await loadSources(env);
-  return sources.filter((s) => s.isEnabled && !excluded.has(s.id));
+  return sources
+    .filter((s) => (s.isEnabled || included.has(s.id)) && !excluded.has(s.id))
+    .map((s) => (s.isEnabled ? s : { ...s, isEnabled: true }));
 }

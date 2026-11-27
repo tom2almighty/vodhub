@@ -44,8 +44,16 @@ function NavLinks({ pathname }: { pathname: string }) {
 function LogoutButton() {
   const { logout } = useAuth();
   return (
-    <Button variant="ghost" size="icon" aria-label="退出登录" title="退出登录" onClick={logout}>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground sm:px-2.5"
+      aria-label="退出登录"
+      title="退出登录"
+      onClick={logout}
+    >
       <LogOut className="h-4 w-4" />
+      <span className="hidden text-xs sm:inline">退出</span>
     </Button>
   );
 }
@@ -82,15 +90,17 @@ export function Navbar() {
           <BrandMark />
           <NavLinks pathname={location.pathname} />
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
+            className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground sm:px-2.5"
             aria-label="视频源设置"
             title="视频源设置"
             onClick={() => setSourcesOpen(true)}
           >
             <Settings2 className="h-4 w-4" />
+            <span className="hidden text-xs sm:inline">视频源</span>
           </Button>
           <ThemeToggle />
           <LogoutButton />

@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
-import { getDisabledSourceIds, subscribeToSourcePrefs } from '@/lib/sourcePrefs';
+import {
+  getSourceOverrides,
+  type SourceOverrides,
+  subscribeToSourcePrefs,
+} from '@/lib/sourcePrefs';
 
-/** Reactive view of the per-browser disabled-source set. */
-export function useSourcePrefs(): Set<string> {
-  const [disabled, setDisabled] = useState<Set<string>>(() => getDisabledSourceIds());
+/** Reactive view of per-browser source overrides on top of subscription defaults. */
+export function useSourcePrefs(): SourceOverrides {
+  const [overrides, setOverrides] = useState<SourceOverrides>(() => getSourceOverrides());
 
-  useEffect(() => subscribeToSourcePrefs(() => setDisabled(getDisabledSourceIds())), []);
+  useEffect(() => subscribeToSourcePrefs(() => setOverrides(getSourceOverrides())), []);
 
-  return disabled;
+  return overrides;
 }

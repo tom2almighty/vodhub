@@ -7,16 +7,37 @@ import { SearchHistoryChips } from '../components/SearchHistoryChips';
 import { SearchProgress } from '../components/SearchProgress';
 import { SearchResultsGrid } from '../components/SearchResultsGrid';
 import { useSearchStream } from '../hooks/useSearchStream';
-import { aggregateResults } from '../lib/aggregate';
+import { aggregateResults, flattenResults } from '../lib/aggregate';
+
+const AGGREGATE_PREF_KEY = 'vodhub_search_aggregate';
+
+function readAggregatePref(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    return localStorage.getItem(AGGREGATE_PREF_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryFromUrl = searchParams.get('q') ?? '';
   const [input, setInput] = useState(queryFromUrl);
+  const [aggregated, setAggregated] = useState<boolean>(readAggregatePref);
 
   useEffect(() => {
     setInput(queryFromUrl);
   }, [queryFromUrl]);
+
+  const handleAggregatedChange = useCallback((next: boolean) => {
+    setAggregated(next);
+    try {
+      localStorage.setItem(AGGREGATE_PREF_KEY, String(next));
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
 
   const stream = useSearchStream(queryFromUrl);
 
@@ -26,7 +47,13 @@ export default function SearchPage() {
     }
   }, [queryFromUrl]);
 
-  const aggregated = useMemo(() => aggregateResults(stream.items), [stream.items]);
+  const displayItems = useMemo(
+    () =>
+      aggregated
+        ? aggregateResults(stream.items, queryFromUrl)
+        : flattenResults(stream.items, queryFromUrl),
+    [aggregated, stream.items, queryFromUrl],
+  );
   const isLoading = stream.status === 'loading';
 
   const handleSubmit = useCallback(
@@ -63,10 +90,12 @@ export default function SearchPage() {
             total={stream.total}
             completed={stream.completed}
             loading={isLoading}
-            resultsCount={aggregated.length}
+            resultsCount={displayItems.length}
+            aggregated={aggregated}
+            onAggregatedChange={handleAggregatedChange}
           />
           <SearchResultsGrid
-            items={aggregated}
+            items={displayItems}
             loading={isLoading}
             query={queryFromUrl}
             noSources={stream.status === 'done' && stream.total === 0}

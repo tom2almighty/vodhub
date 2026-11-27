@@ -68,10 +68,10 @@ export function PosterRow({ children, label }: PosterRowProps) {
         ))}
       </CarouselContent>
       <EdgeMasks />
-      {/* opacity-0 on its own left these invisible but still focusable;
-          focus-within and focus-visible bring them back for keyboard users. */}
-      <CarouselPrevious className="left-1 z-20 hidden h-9 w-9 opacity-0 transition-opacity duration-200 group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 sm:flex" />
-      <CarouselNext className="right-1 z-20 hidden h-9 w-9 opacity-0 transition-opacity duration-200 group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 sm:flex" />
+      {/* Always rendered when that direction can scroll; touch devices keep
+          them visible while hover-capable pointers reveal them on row hover. */}
+      <CarouselPrevious className="inset-y-auto top-[38%] left-1.5 z-20 flex h-8 w-8 -translate-y-1/2 border-border/80 bg-background/85 opacity-90 shadow-sm backdrop-blur-sm transition-opacity duration-200 hover:bg-background disabled:hidden [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 [@media(hover:hover)]:group-focus-within/row:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100 sm:h-9 sm:w-9" />
+      <CarouselNext className="inset-y-auto top-[38%] right-1.5 z-20 flex h-8 w-8 -translate-y-1/2 border-border/80 bg-background/85 opacity-90 shadow-sm backdrop-blur-sm transition-opacity duration-200 hover:bg-background disabled:hidden [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 [@media(hover:hover)]:group-focus-within/row:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100 sm:h-9 sm:w-9" />
     </Carousel>
   );
 }

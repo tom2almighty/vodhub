@@ -2,6 +2,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { isSourceActive } from '@/lib/sourcePrefs';
 import { useSourcePrefs } from '../hooks/useSourcePrefs';
 import { useSources } from '../hooks/useSources';
 import { SourcePreferencesSheet } from './SourcePreferencesSheet';
@@ -13,10 +14,9 @@ import { SourcePreferencesSheet } from './SourcePreferencesSheet';
 export function SourceFilter() {
   const [open, setOpen] = useState(false);
   const { data: sources = [] } = useSources();
-  const disabledIds = useSourcePrefs();
+  const overrides = useSourcePrefs();
 
-  const subscribed = sources.filter((s) => s.isEnabled);
-  const activeCount = subscribed.filter((s) => !disabledIds.has(s.id)).length;
+  const activeCount = sources.filter((s) => isSourceActive(s, overrides)).length;
 
   return (
     <>
@@ -29,9 +29,9 @@ export function SourceFilter() {
       >
         <SlidersHorizontal className="h-4 w-4" />
         <span className="hidden sm:inline">视频源</span>
-        {subscribed.length > 0 && (
+        {sources.length > 0 && (
           <Badge variant="secondary" className="h-5 px-1.5 tabular-nums">
-            {activeCount}/{subscribed.length}
+            {activeCount}/{sources.length}
           </Badge>
         )}
       </Button>

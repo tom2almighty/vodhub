@@ -18,13 +18,27 @@ export function ThemeToggle() {
   }, []);
 
   const ActiveIcon = !mounted ? Sun : theme === 'system' ? Monitor : theme === 'dark' ? Moon : Sun;
+  const activeLabel = !mounted
+    ? '主题'
+    : theme === 'system'
+      ? '系统'
+      : theme === 'dark'
+        ? '深色'
+        : '浅色';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="icon" aria-label="切换主题">
-            <ActiveIcon className="h-4.5 w-4.5 transition-all" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground sm:px-2.5"
+            aria-label="切换主题"
+            title="切换主题"
+          >
+            <ActiveIcon className="h-4 w-4 transition-all" />
+            <span className="hidden text-xs sm:inline">{activeLabel}</span>
           </Button>
         }
       />

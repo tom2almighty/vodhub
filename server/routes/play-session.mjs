@@ -1,5 +1,5 @@
 import { normalizeYear } from '../lib/cms.mjs';
-import { findSource, loadSources, parseExcludedSources } from '../lib/sources.mjs';
+import { findSource, loadSources, parseSourceIds } from '../lib/sources.mjs';
 import { fetchDetailResult } from './detail.mjs';
 import { aggregate } from './search.mjs';
 
@@ -35,11 +35,12 @@ async function resolveCandidates(payload, env) {
 
   if (mode === 'group') {
     const list = Array.isArray(payload.candidates) ? payload.candidates : [];
-    // Disabled sources must not be reachable through the client-supplied list.
-    const enabled = new Set((await loadSources(env)).filter((s) => s.isEnabled).map((s) => s.id));
+    // Only allow sources defined in the subscription; default-off sources may
+    // still be played when the user enabled them in the UI.
+    const known = new Set((await loadSources(env)).map((s) => s.id));
     const filtered = list
       .slice(0, MAX_CANDIDATES)
-      .filter((cand) => cand?.source && cand?.id && enabled.has(String(cand.source)))
+      .filter((cand) => cand?.source && cand?.id && known.has(String(cand.source)))
       .map((cand) => ({ ...cand, source: String(cand.source), id: String(cand.id) }));
     if (filtered.length === 0) throw new Error('缺少候选播放源');
     return filtered;
@@ -50,7 +51,6 @@ async function resolveCandidates(payload, env) {
     const id = String(payload.id || '');
     if (!source || !id) throw new Error('缺少 source 或 id');
     const src = await findSource(env, source);
-    if (src && !src.isEnabled) throw new Error('播放源已停用');
     return [
       emptyResult({
         id,
@@ -66,13 +66,12 @@ async function resolveCandidates(payload, env) {
   if (mode === 'search') {
     const keyword = String(payload.keyword || '').trim();
     if (!keyword) throw new Error('缺少搜索关键词');
-    // Auto-matching is a search; direct/group playback keeps working even for
-    // sources the user turned off, so history stays playable.
     const { items } = await aggregate(
       keyword,
       env,
       undefined,
-      parseExcludedSources(payload.excludedSources),
+      parseSourceIds(payload.excludedSources),
+      parseSourceIds(payload.includedSources),
     );
     if (items.length === 0) throw new Error('未找到匹配播放源');
     return items;

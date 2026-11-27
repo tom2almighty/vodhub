@@ -73,4 +73,69 @@ export function mapDetail(detail, source, id) {
   };
 }
 
+const STRIP_PUNCTUATION_RE = /[\s·•・:：\-—_,.，。!！?？'"“”‘’()（）[\]【】《》/\\]+/g;
+
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .trim();
+}
+
+function compactSearchText(value) {
+  return normalizeSearchText(value).replace(STRIP_PUNCTUATION_RE, '');
+}
+
+/**
+ * Scores how well a mapped SearchResult matches the user's query.
+ * Returns 0 when unrelated — this filters out MacCMS sources that ignore `wd=`
+ * and dump their default latest list on every search.
+ */
+export function scoreRelevance(item, query) {
+  const normalizedQuery = normalizeSearchText(query);
+  const compactQuery = compactSearchText(normalizedQuery);
+  if (!compactQuery) return 0;
+
+  const compactTitle = compactSearchText(item.title);
+  if (compactTitle === compactQuery) return 100;
+  if (compactTitle.startsWith(compactQuery)) return 80;
+  if (compactTitle.includes(compactQuery)) return 60;
+
+  const tokens = normalizedQuery
+    .split(/\s+/)
+    .map((token) => compactSearchText(token))
+    .filter(Boolean);
+
+  if (tokens.length > 1 && tokens.every((token) => compactTitle.includes(token))) {
+    return 50;
+  }
+
+  const compactPeople = compactSearchText(`${item.actors || ''} ${item.directors || ''}`);
+  if (compactQuery.length >= 2 && compactPeople.includes(compactQuery)) {
+    return 30;
+  }
+
+  if (
+    tokens.length > 1 &&
+    tokens.every((token) => compactTitle.includes(token) || compactPeople.includes(token))
+  ) {
+    return 25;
+  }
+
+  return 0;
+}
+
+export function filterRelevantItems(items, query) {
+  if (!Array.isArray(items) || items.length === 0) return [];
+  return items.filter((item) => scoreRelevance(item, query) > 0);
+}
+
+export function sortByRelevance(items, query) {
+  if (!Array.isArray(items) || items.length <= 1) return items || [];
+  return items
+    .map((item, index) => ({ item, index, score: scoreRelevance(item, query) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((entry) => entry.item);
+}
+
 export { normalizeYear };
