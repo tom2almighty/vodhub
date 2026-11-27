@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useSite } from '@/hooks/useSite';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from './BrandLogo';
 
 export function BrandMark({ className }: { className?: string }) {
   const { siteName } = useSite();
@@ -8,11 +9,12 @@ export function BrandMark({ className }: { className?: string }) {
     <Link
       to="/"
       className={cn(
-        'shrink-0 text-lg font-semibold tracking-tight transition-colors hover:text-primary',
+        'inline-flex shrink-0 items-center gap-2 text-lg font-semibold tracking-tight transition-colors hover:text-primary',
         className,
       )}
     >
-      {siteName}
+      <BrandLogo className="size-6" />
+      <span>{siteName}</span>
     </Link>
   );
 }

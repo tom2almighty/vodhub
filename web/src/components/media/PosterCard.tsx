@@ -150,24 +150,24 @@ function PosterCardImpl(props: PosterCardProps) {
       >
         <PosterImage src={poster} alt={title} />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-foreground/70 via-foreground/10 to-transparent dark:from-background/70 dark:via-background/10" />
 
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/75 via-black/30 to-black/45 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100">
-          <div className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl ring-2 ring-white/20 duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:animate-in group-hover:fade-in-0 group-hover:zoom-in-75">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-linear-to-t from-foreground/75 via-foreground/30 to-foreground/45 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 dark:from-background/75 dark:via-background/30 dark:to-background/45">
+          <div className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl ring-2 ring-background/20 duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:animate-in group-hover:fade-in-0 group-hover:zoom-in-75 dark:ring-foreground/20">
             <Play className="ml-0.5 size-5 fill-current" strokeWidth={0} />
           </div>
         </div>
 
         {routing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-            <Spinner className="text-white" />
+          <div className="absolute inset-0 flex items-center justify-center bg-foreground/70 backdrop-blur-sm dark:bg-background/70">
+            <Spinner className="text-background dark:text-foreground" />
           </div>
         )}
 
         {year && year !== 'unknown' && (
           <Badge
             variant="secondary"
-            className="absolute left-2 top-2 h-5 bg-black/55 px-1.5 text-xs text-white/85 backdrop-blur-sm hover:bg-black/55"
+            className="absolute left-2 top-2 h-5 bg-foreground/55 px-1.5 text-xs text-background/85 backdrop-blur-sm hover:bg-foreground/55 dark:bg-background/55 dark:text-foreground/85 dark:hover:bg-background/55"
           >
             {year}
           </Badge>
@@ -175,7 +175,7 @@ function PosterCardImpl(props: PosterCardProps) {
 
         {ratingNum > 0 && (
           <Badge
-            className="absolute right-2 top-2 h-5 bg-amber-400 px-1.5 text-xs font-bold text-black hover:bg-amber-400"
+            className="absolute right-2 top-2 h-5 bg-warning px-1.5 text-xs font-bold text-warning-foreground hover:bg-warning"
             variant="secondary"
           >
             {rating}
@@ -185,7 +185,7 @@ function PosterCardImpl(props: PosterCardProps) {
         {!ratingNum && episodes !== undefined && episodes > 1 && (
           <Badge
             variant="secondary"
-            className="absolute right-2 top-2 h-5 bg-black/55 px-1.5 text-xs text-white/85 backdrop-blur-sm hover:bg-black/55"
+            className="absolute right-2 top-2 h-5 bg-foreground/55 px-1.5 text-xs text-background/85 backdrop-blur-sm hover:bg-foreground/55 dark:bg-background/55 dark:text-foreground/85 dark:hover:bg-background/55"
           >
             {currentEpisode ? `${currentEpisode}/${episodes}` : `${episodes}集`}
           </Badge>
@@ -194,7 +194,7 @@ function PosterCardImpl(props: PosterCardProps) {
         {aggregateCount > 1 && (
           <Badge
             variant="secondary"
-            className="absolute bottom-2 left-2 h-5 gap-1 bg-black/55 px-1.5 text-xs text-white/85 backdrop-blur-sm hover:bg-black/55"
+            className="absolute bottom-2 left-2 h-5 gap-1 bg-foreground/55 px-1.5 text-xs text-background/85 backdrop-blur-sm hover:bg-foreground/55 dark:bg-background/55 dark:text-foreground/85 dark:hover:bg-background/55"
           >
             <Layers className="h-2.5 w-2.5" strokeWidth={2} />
             {aggregateCount}
@@ -206,7 +206,7 @@ function PosterCardImpl(props: PosterCardProps) {
             type="button"
             onClick={handleDelete}
             aria-label="移除"
-            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/55 text-white/85 opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
+            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md bg-foreground/55 text-background/85 opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 dark:bg-background/55 dark:text-foreground/85"
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
           </button>

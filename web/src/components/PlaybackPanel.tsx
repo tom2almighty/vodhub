@@ -56,7 +56,7 @@ function DetailMeta({
       )}
       <div className="mt-3 flex flex-wrap gap-2">
         {score && (
-          <Badge className="h-auto bg-amber-400 font-bold text-black hover:bg-amber-400">
+          <Badge className="h-auto bg-warning font-bold text-warning-foreground hover:bg-warning">
             {score}
           </Badge>
         )}

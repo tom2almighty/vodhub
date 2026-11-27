@@ -10,8 +10,8 @@ services:
     environment:
       - SITE_NAME=VODHUB
       - ADMIN_PASSWORD=your_admin_password
-      # 可选：给朋友使用的访客密码（不可修改后台视频源，历史和临时源开关各自浏览器隔离）
-      # - ACCESS_PASSWORD=your_friend_password
+      # 可选：普通访问密码（只读用户权限，不可修改后台视频源，个人偏好与历史保存在各自浏览器）
+      # - ACCESS_PASSWORD=your_viewer_password
       - AUTH_SECRET=change_me_to_a_long_random_string
       - DATA_DIR=/app/data
       - SEARCH_CONCURRENCY=10

@@ -1,6 +1,7 @@
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { BrandLogo } from '@/components/layout/BrandLogo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,7 +19,7 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const loginMutation = useLogin();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!password) return;
     loginMutation.mutate(
@@ -37,9 +38,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in-up">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-              <span className="text-xl font-bold">{siteName[0]?.toUpperCase()}</span>
-            </div>
+            <BrandLogo className="mx-auto mb-3 size-12 shadow-sm" />
             <CardTitle className="text-xl">{siteName}</CardTitle>
             <p className="text-sm text-muted-foreground">输入密码以继续</p>
           </CardHeader>

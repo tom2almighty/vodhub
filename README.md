@@ -16,7 +16,7 @@
 cp .env.example .env
 ```
 
-必填项：`ADMIN_PASSWORD`（管理员密码）、`AUTH_SECRET`（32 位以上随机密钥）。可选配置 `ACCESS_PASSWORD`（访客/朋友访问密码）与 `UPSTREAM_PROXY`（仅用于勾选 `useProxy` 的视频源 API 元数据请求，不代理视频播放）。
+必填项：`ADMIN_PASSWORD`（管理员密码）、`AUTH_SECRET`（32 位以上随机密钥）。可选配置 `ACCESS_PASSWORD`（普通访问密码，只读用户权限）与 `UPSTREAM_PROXY`（仅用于勾选 `useProxy` 的视频源 API 元数据请求，不代理视频播放）。
 
 2. 启动后端（默认监听 `:3000`）：
 

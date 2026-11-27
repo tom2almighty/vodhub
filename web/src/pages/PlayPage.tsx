@@ -1,4 +1,3 @@
-import type { MediaTimeUpdateEventDetail } from '@vidstack/react';
 import { ArrowLeft } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -11,8 +10,8 @@ import { getAllPlayRecords, savePlayRecord } from '@/lib/storage';
 import type { PlaySessionResponse, SearchResult } from '@/lib/types';
 import { generateStorageKey } from '@/lib/utils';
 
-const VidstackPlayer = lazy(() =>
-  import('@/components/media/VidstackPlayer').then((m) => ({ default: m.VidstackPlayer })),
+const VideoPlayer = lazy(() =>
+  import('@/components/media/VideoPlayer').then((m) => ({ default: m.VideoPlayer })),
 );
 
 const SESSION_KEY = 'vodhub_play_session';
@@ -29,8 +28,8 @@ interface SnapshotState {
 
 function PlayerLoading() {
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
-      <Spinner className="text-white" />
+    <div className="flex h-full w-full items-center justify-center bg-foreground dark:bg-background">
+      <Spinner className="text-background dark:text-foreground" />
     </div>
   );
 }
@@ -147,8 +146,8 @@ export default function PlayPage() {
   }, [persistProgress]);
 
   const handleTimeUpdate = useCallback(
-    (detail: MediaTimeUpdateEventDetail) => {
-      snapshotRef.current.time = detail.currentTime;
+    (currentTime: number) => {
+      snapshotRef.current.time = currentTime;
       persistProgress();
     },
     [persistProgress],
@@ -156,9 +155,9 @@ export default function PlayPage() {
 
   const handlePause = useCallback(() => persistProgress(true), [persistProgress]);
 
-  const handleCanPlay = useCallback((detail: { duration?: number }) => {
-    if (detail?.duration && Number.isFinite(detail.duration)) {
-      snapshotRef.current.total = detail.duration;
+  const handleCanPlay = useCallback((duration: number) => {
+    if (duration && Number.isFinite(duration)) {
+      snapshotRef.current.total = duration;
     }
     setSwitching(false);
   }, []);
@@ -261,13 +260,13 @@ export default function PlayPage() {
     <div className="app-page">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div
-          className="relative overflow-hidden rounded-lg border border-border bg-black shadow-lg"
+          className="relative overflow-hidden rounded-lg border border-border bg-foreground shadow-lg dark:bg-background"
           style={{ aspectRatio: '16 / 9' }}
         >
-          <div className="absolute inset-0 bg-black">
+          <div className="absolute inset-0 bg-foreground dark:bg-background">
             {videoUrl && (
               <Suspense fallback={<PlayerLoading />}>
-                <VidstackPlayer
+                <VideoPlayer
                   key={playerKey}
                   src={videoUrl}
                   poster={cover}
@@ -283,9 +282,9 @@ export default function PlayPage() {
             )}
           </div>
           {switching && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                <Spinner className="text-white" />
+            <div className="absolute inset-0 flex items-center justify-center bg-foreground/80 backdrop-blur-sm dark:bg-background/80">
+              <div className="flex items-center gap-2 text-sm text-background dark:text-foreground">
+                <Spinner className="text-background dark:text-foreground" />
                 切换中
               </div>
             </div>

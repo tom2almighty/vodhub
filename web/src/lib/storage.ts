@@ -26,7 +26,7 @@ export function subscribeLocalData<T>(
   return () => window.removeEventListener(event, handler);
 }
 
-// ===== play records (browser-local, isolated per friend/device) =====
+// ===== play records (browser-local, isolated per browser) =====
 
 export function getAllPlayRecords(): Record<string, PlayRecord> {
   if (typeof window === 'undefined') return {};

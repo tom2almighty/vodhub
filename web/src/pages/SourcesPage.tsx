@@ -82,21 +82,33 @@ function ProbeBadge({ probe }: { probe?: ProbeInfo }) {
   const ms = typeof probe.latencyMs === 'number' ? ` ${probe.latencyMs}ms` : '';
   if (probe.status === 'ok') {
     return (
-      <Badge variant="secondary" title={probe.message}>
+      <Badge
+        variant="outline"
+        className="border-success/30 bg-success/10 text-success"
+        title={probe.message}
+      >
         正常{ms}
       </Badge>
     );
   }
   if (probe.status === 'fake-search') {
     return (
-      <Badge variant="destructive" title={probe.message}>
+      <Badge
+        variant="outline"
+        className="border-warning/30 bg-warning/10 text-warning"
+        title={probe.message}
+      >
         假搜索{ms}
       </Badge>
     );
   }
   if (probe.status === 'empty') {
     return (
-      <Badge variant="outline" title={probe.message}>
+      <Badge
+        variant="outline"
+        className="border-warning/30 bg-warning/10 text-warning"
+        title={probe.message}
+      >
         空数据{ms}
       </Badge>
     );
@@ -359,7 +371,7 @@ export default function SourcesPage() {
     return next;
   };
 
-  const handleAddManual = (e: React.FormEvent) => {
+  const handleAddManual = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const next = buildSourceFromForm(addForm);
     if (!next) return;
@@ -391,7 +403,7 @@ export default function SourcesPage() {
     setEditOpen(true);
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const next = buildSourceFromForm(editForm);
     if (!next || editingIndex < 0) return;
