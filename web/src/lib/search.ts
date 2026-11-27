@@ -1,4 +1,32 @@
-import type { SearchResult } from './types';
+import type { SearchResult, SourceOption } from './types';
+
+export interface SourceRank {
+  weight: number;
+  order: number;
+}
+
+export function buildSourceRankMap(sources: SourceOption[]): Map<string, SourceRank> {
+  const map = new Map<string, SourceRank>();
+  for (let i = 0; i < sources.length; i++) {
+    map.set(sources[i].id, { weight: sources[i].weight ?? 0, order: i });
+  }
+  return map;
+}
+
+function getRank(sourceId: string, ranks?: Map<string, SourceRank>): SourceRank {
+  return ranks?.get(sourceId) ?? { weight: 0, order: Number.MAX_SAFE_INTEGER };
+}
+
+function sortBySourcePriority(
+  items: SearchResult[],
+  ranks?: Map<string, SourceRank>,
+): SearchResult[] {
+  if (!ranks || ranks.size === 0 || items.length <= 1) return items;
+  return items
+    .map((item, idx) => ({ item, rank: getRank(item.source, ranks), idx }))
+    .sort((a, b) => b.rank.weight - a.rank.weight || a.rank.order - b.rank.order || a.idx - b.idx)
+    .map((x) => x.item);
+}
 
 export interface SearchDisplayItem {
   key: string;
@@ -66,13 +94,25 @@ function groupByTitle(items: SearchResult[]): Map<string, SearchResult[]> {
   return groups;
 }
 
-export function aggregateResults(items: SearchResult[], query = ''): SearchDisplayItem[] {
+export function aggregateResults(
+  items: SearchResult[],
+  query = '',
+  sourceRanks?: Map<string, SourceRank>,
+): SearchDisplayItem[] {
   const groups = groupByTitle(items);
-  const result: Array<{ entry: SearchDisplayItem; score: number; order: number }> = [];
-  let order = 0;
+  const result: Array<{
+    entry: SearchDisplayItem;
+    score: number;
+    weight: number;
+    sourceOrder: number;
+    arrival: number;
+  }> = [];
+  let arrival = 0;
 
-  for (const [key, group] of groups) {
+  for (const [key, rawGroup] of groups) {
+    const group = sortBySourcePriority(rawGroup, sourceRanks);
     const primary = group[0];
+    const primaryRank = getRank(primary.source, sourceRanks);
     const poster = group.find((g) => g.poster)?.poster || '';
     const entry: SearchDisplayItem = {
       key,
@@ -85,30 +125,46 @@ export function aggregateResults(items: SearchResult[], query = ''): SearchDispl
       candidates: group,
       sourceNames: group.map((g) => g.source_name),
     };
-    result.push({ entry, score: scoreTitleRelevance(primary, query), order: order++ });
+    result.push({
+      entry,
+      score: scoreTitleRelevance(primary, query),
+      weight: primaryRank.weight,
+      sourceOrder: primaryRank.order,
+      arrival: arrival++,
+    });
   }
 
-  if (query.trim()) {
-    result.sort(
-      (a, b) =>
-        b.score - a.score ||
-        b.entry.candidates.length - a.entry.candidates.length ||
-        a.order - b.order,
-    );
-  }
+  result.sort((a, b) => {
+    if (query.trim() && b.score !== a.score) return b.score - a.score;
+    if (b.weight !== a.weight) return b.weight - a.weight;
+    if (b.entry.candidates.length !== a.entry.candidates.length) {
+      return b.entry.candidates.length - a.entry.candidates.length;
+    }
+    if (a.sourceOrder !== b.sourceOrder) return a.sourceOrder - b.sourceOrder;
+    return a.arrival - b.arrival;
+  });
   return result.map((r) => r.entry);
 }
 
-export function flattenResults(items: SearchResult[], query = ''): SearchDisplayItem[] {
-  const groups = groupByTitle(items);
+export function flattenResults(
+  items: SearchResult[],
+  query = '',
+  sourceRanks?: Map<string, SourceRank>,
+): SearchDisplayItem[] {
+  const rawGroups = groupByTitle(items);
+  const sortedGroups = new Map<string, SearchResult[]>();
+  for (const [k, g] of rawGroups) {
+    sortedGroups.set(k, sortBySourcePriority(g, sourceRanks));
+  }
   const seenKeys = new Map<string, number>();
 
-  const result = items.map((item, order) => {
+  const result = items.map((item, arrival) => {
     const groupKey = buildGroupKey(item);
-    const candidates = groups.get(groupKey) || [item];
+    const candidates = sortedGroups.get(groupKey) || [item];
     const baseKey = `${item.source}:${item.id}`;
     const count = seenKeys.get(baseKey) || 0;
     seenKeys.set(baseKey, count + 1);
+    const rank = getRank(item.source, sourceRanks);
 
     const entry: SearchDisplayItem = {
       key: count === 0 ? baseKey : `${baseKey}#${count}`,
@@ -120,11 +176,20 @@ export function flattenResults(items: SearchResult[], query = ''): SearchDisplay
       primary: item,
       candidates,
     };
-    return { entry, score: scoreTitleRelevance(item, query), order };
+    return {
+      entry,
+      score: scoreTitleRelevance(item, query),
+      weight: rank.weight,
+      sourceOrder: rank.order,
+      arrival,
+    };
   });
 
-  if (query.trim()) {
-    result.sort((a, b) => b.score - a.score || a.order - b.order);
-  }
+  result.sort((a, b) => {
+    if (query.trim() && b.score !== a.score) return b.score - a.score;
+    if (b.weight !== a.weight) return b.weight - a.weight;
+    if (a.sourceOrder !== b.sourceOrder) return a.sourceOrder - b.sourceOrder;
+    return a.arrival - b.arrival;
+  });
   return result.map((r) => r.entry);
 }

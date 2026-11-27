@@ -21,7 +21,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useSearchHistory, useSearchHistoryMutations } from '@/hooks/useHistory';
 import { useSearchStream } from '@/hooks/useSearchStream';
-import { aggregateResults, flattenResults, type SearchDisplayItem } from '@/lib/search';
+import { useSources } from '@/hooks/useSources';
+import {
+  aggregateResults,
+  buildSourceRankMap,
+  flattenResults,
+  type SearchDisplayItem,
+} from '@/lib/search';
 
 const AGGREGATE_PREF_KEY = 'vodhub_search_aggregate';
 const INITIAL_BATCH = 24;
@@ -214,6 +220,8 @@ export default function SearchPage() {
   }, []);
 
   const stream = useSearchStream(queryFromUrl);
+  const { data: sources = [] } = useSources();
+  const sourceRanks = useMemo(() => buildSourceRankMap(sources), [sources]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: addHistory.mutate is stable
   useEffect(() => {
@@ -224,9 +232,9 @@ export default function SearchPage() {
   const displayItems = useMemo(
     () =>
       aggregated
-        ? aggregateResults(stream.items, queryFromUrl)
-        : flattenResults(stream.items, queryFromUrl),
-    [aggregated, stream.items, queryFromUrl],
+        ? aggregateResults(stream.items, queryFromUrl, sourceRanks)
+        : flattenResults(stream.items, queryFromUrl, sourceRanks),
+    [aggregated, stream.items, queryFromUrl, sourceRanks],
   );
   const isLoading = stream.status === 'loading';
 

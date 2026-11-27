@@ -1,20 +1,17 @@
+import { arrayMove } from '@dnd-kit/sortable';
 import {
   Activity,
-  ArrowDown,
-  ArrowUp,
   Download,
-  Pencil,
   Plus,
   RefreshCw,
   Save,
   Search,
   ShieldAlert,
-  Trash2,
   Upload,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
+import { SortableSourceTable } from '@/components/SortableSourceTable';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -48,8 +45,7 @@ import {
   syncAdminSources,
 } from '@/lib/api';
 import { queryClient, queryKeys } from '@/lib/query';
-import type { ProbeInfo, VideoSource } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import type { VideoSource } from '@/lib/types';
 
 type StatusFilter = 'all' | 'enabled' | 'disabled' | 'ok' | 'fake-search' | 'error' | 'unchecked';
 type SyncMode = 'merge' | 'append' | 'replace';
@@ -71,55 +67,6 @@ const SYNC_MODE_LABELS: Record<SyncMode, string> = {
   replace: '完全覆盖',
 };
 
-function ProbeBadge({ probe }: { probe?: ProbeInfo }) {
-  if (!probe) {
-    return (
-      <Badge variant="outline" className="text-muted-foreground">
-        未检测
-      </Badge>
-    );
-  }
-  const ms = typeof probe.latencyMs === 'number' ? ` ${probe.latencyMs}ms` : '';
-  if (probe.status === 'ok') {
-    return (
-      <Badge
-        variant="outline"
-        className="border-success/30 bg-success/10 text-success"
-        title={probe.message}
-      >
-        正常{ms}
-      </Badge>
-    );
-  }
-  if (probe.status === 'fake-search') {
-    return (
-      <Badge
-        variant="outline"
-        className="border-warning/30 bg-warning/10 text-warning"
-        title={probe.message}
-      >
-        假搜索{ms}
-      </Badge>
-    );
-  }
-  if (probe.status === 'empty') {
-    return (
-      <Badge
-        variant="outline"
-        className="border-warning/30 bg-warning/10 text-warning"
-        title={probe.message}
-      >
-        空数据{ms}
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="destructive" title={probe.message}>
-      异常
-    </Badge>
-  );
-}
-
 interface SourceFormState {
   id: string;
   name: string;
@@ -127,6 +74,7 @@ interface SourceFormState {
   detailUrl: string;
   timeout: string;
   retry: string;
+  weight: string;
   isEnabled: boolean;
   useProxy: boolean;
 }
@@ -138,18 +86,10 @@ const EMPTY_FORM: SourceFormState = {
   detailUrl: '',
   timeout: '',
   retry: '',
+  weight: '',
   isEnabled: true,
   useProxy: false,
 };
-
-function formatShortUrl(raw: string): string {
-  try {
-    const u = new URL(raw);
-    return u.host + (u.pathname !== '/' ? u.pathname : '');
-  } catch {
-    return raw;
-  }
-}
 
 export default function SourcesPage() {
   const { data, isLoading, isError, refetch } = useAdminSources();
@@ -368,6 +308,12 @@ export default function SourcesPage() {
     if (f.detailUrl.trim()) next.detailUrl = f.detailUrl.trim();
     if (f.timeout.trim() && Number(f.timeout) > 0) next.timeout = Math.round(Number(f.timeout));
     if (f.retry.trim() !== '' && Number(f.retry) >= 0) next.retry = Math.round(Number(f.retry));
+    if (f.weight.trim() !== '') {
+      const parsedWeight = Number.parseInt(f.weight.trim(), 10);
+      if (!Number.isNaN(parsedWeight) && parsedWeight !== 0) {
+        next.weight = Math.max(-999, Math.min(999, parsedWeight));
+      }
+    }
     return next;
   };
 
@@ -397,6 +343,7 @@ export default function SourcesPage() {
       detailUrl: s.detailUrl || '',
       timeout: s.timeout ? String(s.timeout) : '',
       retry: typeof s.retry === 'number' ? String(s.retry) : '',
+      weight: s.weight ? String(s.weight) : '',
       isEnabled: s.isEnabled,
       useProxy: Boolean(s.useProxy),
     });
@@ -437,14 +384,35 @@ export default function SourcesPage() {
     }
   };
 
-  const moveRow = (index: number, delta: -1 | 1) => {
-    const target = index + delta;
-    if (target < 0 || target >= sources.length) return;
+  const reorderByIds = (activeId: string, overId: string) => {
     setSources((prev) => {
-      const next = [...prev];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
+      const oldIndex = prev.findIndex((s) => s.id === activeId);
+      const newIndex = prev.findIndex((s) => s.id === overId);
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
     });
+    setDirty(true);
+  };
+
+  const pinToTop = (index: number) => {
+    if (index <= 0 || index >= sources.length) return;
+    setSources((prev) => arrayMove(prev, index, 0));
+    setDirty(true);
+  };
+
+  const toggleEnabled = (index: number, enabled: boolean) => {
+    setSources((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, isEnabled: enabled } : item)),
+    );
+    setDirty(true);
+  };
+
+  const updateWeight = (index: number, weight: number) => {
+    setSources((prev) =>
+      prev.map((item, idx) =>
+        idx === index ? { ...item, weight: weight === 0 ? undefined : weight } : item,
+      ),
+    );
     setDirty(true);
   };
 
@@ -478,7 +446,9 @@ export default function SourcesPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight md:text-2xl">视频源管理</h1>
-          <p className="mt-1 text-sm text-muted-foreground">管理视频源与默认开关状态。</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            拖拽调整列表顺序，搜索结果按独立权重优先、同权重按顺序兜底。
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -607,11 +577,11 @@ export default function SourcesPage() {
         </div>
       )}
 
-      {/* Compact 2-column grid */}
+      {/* Sortable compact table */}
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+        <div className="space-y-2 rounded-lg border border-border bg-card p-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+            <Skeleton key={i} className="h-10 w-full" />
           ))}
         </div>
       ) : isError ? (
@@ -637,122 +607,18 @@ export default function SourcesPage() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-          {filteredRows.map(({ src, index }) => {
-            const probing = probingIds.has(src.id);
-            return (
-              <div
-                key={src.id}
-                className={cn(
-                  'group flex flex-col justify-between gap-2 rounded-lg border bg-card px-3.5 py-3 transition-colors',
-                  src.isEnabled ? 'border-border' : 'border-border/60 bg-muted/25',
-                )}
-              >
-                <div className="flex items-start gap-2.5">
-                  <Switch
-                    className="mt-0.5"
-                    size="sm"
-                    checked={src.isEnabled}
-                    aria-label={`默认启用 ${src.name}`}
-                    onCheckedChange={(checked) => {
-                      setSources((prev) =>
-                        prev.map((item, idx) =>
-                          idx === index ? { ...item, isEnabled: checked } : item,
-                        ),
-                      );
-                      setDirty(true);
-                    }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-sm font-medium">{src.name}</span>
-                      <ProbeBadge probe={src.probe} />
-                      {src.useProxy && (
-                        <Badge
-                          variant="outline"
-                          className="text-muted-foreground"
-                          title="仅 API 元数据请求走 UPSTREAM_PROXY，播放流始终直连"
-                        >
-                          代理
-                        </Badge>
-                      )}
-                    </div>
-                    <p
-                      className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
-                      title={`${src.id} · ${src.url}`}
-                    >
-                      {formatShortUrl(src.url)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2">
-                  <span
-                    className="truncate text-xs text-muted-foreground"
-                    title={src.probe?.message || src.id}
-                  >
-                    {src.probe?.message || src.id}
-                  </span>
-                  <div className="flex shrink-0 items-center gap-0.5">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={probing}
-                      onClick={() => probeOne(index)}
-                      aria-label={`检测 ${src.name}`}
-                      title="检测搜索能力"
-                    >
-                      {probing ? (
-                        <Spinner className="size-3.5" />
-                      ) : (
-                        <Activity className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => openEditor(index)}
-                      aria-label={`编辑 ${src.name}`}
-                      title="编辑"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={index === 0}
-                      onClick={() => moveRow(index, -1)}
-                      aria-label="上移"
-                      title="上移"
-                    >
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={index === sources.length - 1}
-                      onClick={() => moveRow(index, 1)}
-                      aria-label="下移"
-                      title="下移"
-                    >
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => deleteRow(index)}
-                      aria-label={`删除 ${src.name}`}
-                      title="删除"
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <SortableSourceTable
+          rows={filteredRows}
+          dragDisabled={keyword.trim() !== '' || statusFilter !== 'all'}
+          probingIds={probingIds}
+          onReorder={reorderByIds}
+          onToggleEnabled={toggleEnabled}
+          onWeightChange={updateWeight}
+          onPinTop={pinToTop}
+          onProbe={probeOne}
+          onEdit={openEditor}
+          onDelete={deleteRow}
+        />
       )}
 
       {/* Add / Sync / Import Dialog with fixed tab height */}
@@ -826,9 +692,21 @@ export default function SourcesPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="add-timeout">超时 ms（可选）</Label>
+                        <Label htmlFor="add-weight">搜索权重</Label>
+                        <Input
+                          id="add-weight"
+                          type="number"
+                          min={-999}
+                          max={999}
+                          value={addForm.weight}
+                          onChange={(e) => setAddForm((f) => ({ ...f, weight: e.target.value }))}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="add-timeout">超时 ms</Label>
                         <Input
                           id="add-timeout"
                           type="number"
@@ -840,7 +718,7 @@ export default function SourcesPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="add-retry">重试次数（可选）</Label>
+                        <Label htmlFor="add-retry">重试次数</Label>
                         <Input
                           id="add-retry"
                           type="number"
@@ -1048,9 +926,21 @@ export default function SourcesPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-timeout">超时 ms（可选）</Label>
+                <Label htmlFor="edit-weight">搜索权重</Label>
+                <Input
+                  id="edit-weight"
+                  type="number"
+                  min={-999}
+                  max={999}
+                  value={editForm.weight}
+                  onChange={(e) => setEditForm((f) => ({ ...f, weight: e.target.value }))}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-timeout">超时 ms</Label>
                 <Input
                   id="edit-timeout"
                   type="number"
@@ -1058,10 +948,11 @@ export default function SourcesPage() {
                   step={500}
                   value={editForm.timeout}
                   onChange={(e) => setEditForm((f) => ({ ...f, timeout: e.target.value }))}
+                  placeholder="10000"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="edit-retry">重试次数（可选）</Label>
+                <Label htmlFor="edit-retry">重试次数</Label>
                 <Input
                   id="edit-retry"
                   type="number"
@@ -1069,6 +960,7 @@ export default function SourcesPage() {
                   max={5}
                   value={editForm.retry}
                   onChange={(e) => setEditForm((f) => ({ ...f, retry: e.target.value }))}
+                  placeholder="1"
                 />
               </div>
             </div>

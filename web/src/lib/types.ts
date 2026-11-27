@@ -16,6 +16,7 @@ export interface VideoSource {
   detailUrl?: string;
   timeout?: number;
   retry?: number;
+  weight?: number;
   isEnabled: boolean;
   useProxy?: boolean;
   probe?: ProbeInfo;
@@ -25,6 +26,7 @@ export interface SourceOption {
   id: string;
   name: string;
   isEnabled: boolean;
+  weight?: number;
 }
 
 export interface UpstreamPreset {

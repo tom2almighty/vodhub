@@ -1,6 +1,10 @@
 package cms
 
-import "testing"
+import (
+	"testing"
+
+	"vodhub/internal/store"
+)
 
 func TestParsePlayURLPrefersM3U8(t *testing.T) {
 	raw := "第1集$https://a.example/1.html#第2集$https://a.example/2.html$$$第1集$https://b.example/1.m3u8#第2集$https://b.example/2.m3u8"
@@ -23,6 +27,29 @@ func TestRelevanceScoringAndFiltering(t *testing.T) {
 	}
 	if filtered[0].ID != "3" || filtered[1].ID != "2" {
 		t.Fatalf("expected exact match first, got order %s, %s", filtered[0].ID, filtered[1].ID)
+	}
+}
+
+func TestSortByRelevanceAndPriority(t *testing.T) {
+	sources := []store.VideoSource{
+		{ID: "first", Weight: 0},
+		{ID: "second", Weight: 0},
+		{ID: "boosted", Weight: 10},
+		{ID: "demoted", Weight: -5},
+	}
+	items := []SearchResult{
+		{ID: "d", Title: "庆余年", Source: "demoted"},
+		{ID: "s", Title: "庆余年", Source: "second"},
+		{ID: "f", Title: "庆余年", Source: "first"},
+		{ID: "b", Title: "庆余年", Source: "boosted"},
+		{ID: "p", Title: "庆余年 第二季", Source: "boosted"},
+	}
+	sorted := SortByRelevanceAndPriority(items, "庆余年", sources)
+	want := []string{"b", "f", "s", "d", "p"}
+	for i, id := range want {
+		if sorted[i].ID != id {
+			t.Fatalf("pos %d: want %s, got %s (full: %+v)", i, id, sorted[i].ID, sorted)
+		}
 	}
 }
 

@@ -38,6 +38,7 @@ type VideoSource struct {
 	DetailURL string     `json:"detailUrl,omitempty"`
 	Timeout   int        `json:"timeout,omitempty"`
 	Retry     *int       `json:"retry,omitempty"`
+	Weight    int        `json:"weight,omitempty"`
 	IsEnabled bool       `json:"isEnabled"`
 	UseProxy  bool       `json:"useProxy,omitempty"`
 	Probe     *ProbeInfo `json:"probe,omitempty"`
@@ -47,6 +48,7 @@ type SourceOption struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	IsEnabled bool   `json:"isEnabled"`
+	Weight    int    `json:"weight,omitempty"`
 }
 
 type UpstreamPreset struct {
@@ -120,7 +122,7 @@ func (s *Store) ListPublic() []SourceOption {
 	defer s.mu.RUnlock()
 	out := make([]SourceOption, len(s.state.Sources))
 	for i, src := range s.state.Sources {
-		out[i] = SourceOption{ID: src.ID, Name: src.Name, IsEnabled: src.IsEnabled}
+		out[i] = SourceOption{ID: src.ID, Name: src.Name, IsEnabled: src.IsEnabled, Weight: src.Weight}
 	}
 	return out
 }
@@ -267,6 +269,7 @@ func NormalizeList(list []VideoSource) []VideoSource {
 			ID:        id,
 			Name:      name,
 			URL:       u,
+			Weight:    raw.Weight,
 			IsEnabled: raw.IsEnabled,
 			UseProxy:  raw.UseProxy,
 			Probe:     raw.Probe,
@@ -304,6 +307,7 @@ func ParseSourcesPayload(raw []byte) ([]VideoSource, error) {
 			Detail    string     `json:"detail"`
 			Timeout   int        `json:"timeout"`
 			Retry     *int       `json:"retry"`
+			Weight    int        `json:"weight"`
 			IsEnabled *bool      `json:"isEnabled"`
 			UseProxy  bool       `json:"useProxy"`
 			Probe     *ProbeInfo `json:"probe"`
@@ -325,6 +329,7 @@ func ParseSourcesPayload(raw []byte) ([]VideoSource, error) {
 				DetailURL: firstNonEmpty(it.DetailURL, it.Detail),
 				Timeout:   it.Timeout,
 				Retry:     it.Retry,
+				Weight:    it.Weight,
 				IsEnabled: enabled,
 				UseProxy:  it.UseProxy,
 				Probe:     it.Probe,

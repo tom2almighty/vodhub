@@ -4,6 +4,8 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+
+	"vodhub/internal/store"
 )
 
 // normalizeText folds full-width ASCII characters to half-width and lowercases.
@@ -110,21 +112,55 @@ func FilterRelevant(items []SearchResult, query string) []SearchResult {
 }
 
 func SortByRelevance(items []SearchResult, query string) []SearchResult {
+	return SortByRelevanceAndPriority(items, query, nil)
+}
+
+// SortByRelevanceAndPriority orders search results by keyword relevance first,
+// then explicit source weight (descending), then source list order (ascending).
+func SortByRelevanceAndPriority(items []SearchResult, query string, sources []store.VideoSource) []SearchResult {
 	if len(items) <= 1 {
 		return items
 	}
+	type sourceRank struct {
+		weight int
+		order  int
+	}
+	ranks := make(map[string]sourceRank, len(sources))
+	for i, src := range sources {
+		ranks[src.ID] = sourceRank{weight: src.Weight, order: i}
+	}
+	fallbackOrder := len(sources) + 1
+
 	type scored struct {
-		item  SearchResult
-		score int
-		idx   int
+		item   SearchResult
+		score  int
+		weight int
+		order  int
+		idx    int
 	}
 	list := make([]scored, len(items))
 	for i, it := range items {
-		list[i] = scored{item: it, score: ScoreRelevance(it, query), idx: i}
+		r, ok := ranks[it.Source]
+		if !ok {
+			r = sourceRank{weight: 0, order: fallbackOrder}
+		}
+		list[i] = scored{
+			item:   it,
+			score:  ScoreRelevance(it, query),
+			weight: r.weight,
+			order:  r.order,
+			idx:    i,
+		}
 	}
 	sort.SliceStable(list, func(i, j int) bool {
 		if list[i].score != list[j].score {
 			return list[i].score > list[j].score
+		}
+		if list[i].weight != list[j].weight {
+			return list[i].weight > list[j].weight
+		}
+		if list[i].order != list[j].order {
+			return list[i].order < list[j].order
 		}
 		return list[i].idx < list[j].idx
 	})

@@ -488,7 +488,8 @@ func (c *Client) AggregatedSearchStream(
 	return int(totalHits.Load()), int(completed.Load())
 }
 
-// AggregatedSearch collects all relevant items across sources and sorts them by relevance.
+// AggregatedSearch collects all relevant items across sources and sorts them
+// by keyword relevance, explicit source weight, and source list order.
 func (c *Client) AggregatedSearch(ctx context.Context, query string, sources []store.VideoSource) []SearchResult {
 	var (
 		mu  sync.Mutex
@@ -499,5 +500,5 @@ func (c *Client) AggregatedSearch(ctx context.Context, query string, sources []s
 		all = append(all, items...)
 		mu.Unlock()
 	}, nil)
-	return SortByRelevance(all, query)
+	return SortByRelevanceAndPriority(all, query, sources)
 }

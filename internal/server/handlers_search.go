@@ -223,6 +223,7 @@ func (s *Server) handlePlaySession(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "NO_CANDIDATES", "缺少候选播放源")
 			return
 		}
+		candidates = cms.SortByRelevanceAndPriority(candidates, "", all)
 
 	case "direct":
 		if payload.Source == "" || payload.ID == "" {
