@@ -3,16 +3,16 @@ name: CI & Release
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches: [legacy-node]
     tags:
-      - "v*"
+      - "legacy-v*"
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - '.github/**'
       - '!.github/workflows/**'
   pull_request:
-    branches: [main, master]
+    branches: [legacy-node]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -70,7 +70,7 @@ jobs:
   release:
     name: Publish GitHub Release
     needs: verify
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/legacy-v')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -116,7 +116,7 @@ jobs:
   docker:
     name: Docker build & push
     needs: verify
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/legacy-v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -137,7 +137,7 @@ jobs:
           images: ${{ steps.img.outputs.name }}
           tags: |
             type=ref,event=tag
-            type=raw,value=latest
+            type=raw,value=legacy-node
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -181,7 +181,7 @@ jobs:
       - name: Inspect manifest
         env:
           IMAGE: ${{ steps.img.outputs.name }}
-        run: docker buildx imagetools inspect "${IMAGE}:latest"
+        run: docker buildx imagetools inspect "${IMAGE}:legacy-node"
 
       - name: Job summary
         env:
@@ -193,10 +193,10 @@ jobs:
             echo ""
             echo "| Field | Value |"
             echo "| --- | --- |"
-            echo "| Image | \`${IMAGE}:latest\` |"
+            echo "| Image | \`${IMAGE}:legacy-node\` |"
             echo "| Digest | \`${DIGEST}\` |"
             echo "| Platforms | linux/amd64, linux/arm64 |"
-            echo "| Pull | \`docker pull ${IMAGE}:latest\` |"
+            echo "| Pull | \`docker pull ${IMAGE}:legacy-node\` |"
             echo "| Signed | cosign keyless (OIDC) |"
             echo "| SBOM | embedded |"
             echo "| Provenance | SLSA mode=max |"
