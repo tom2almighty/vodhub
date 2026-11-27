@@ -1,0 +1,198 @@
+import { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { stripDescriptionHtml } from '@/lib/utils';
+
+interface SourceLike {
+  source: string;
+  source_name: string;
+  id: string;
+}
+
+interface MediaInfo {
+  title: string;
+  year?: string;
+  score?: string;
+  currentEpisodeTitle?: string;
+  typeName?: string;
+  area?: string;
+  remark?: string;
+  sourceName?: string;
+  desc?: string;
+}
+
+interface PlaybackPanelProps {
+  totalEpisodes: number;
+  episodesTitles: string[];
+  episodeValue: number;
+  onEpisodeChange: (ep: number) => void;
+  currentSource: string;
+  currentId: string;
+  availableSources: SourceLike[];
+  onSourceChange: (source: string, id: string, title: string) => Promise<void>;
+  info: MediaInfo;
+}
+
+function DetailMeta({
+  title,
+  year,
+  score,
+  currentEpisodeTitle,
+  typeName,
+  area,
+  remark,
+  sourceName,
+  desc,
+}: MediaInfo) {
+  const cleanDesc = desc ? stripDescriptionHtml(desc) : '';
+  return (
+    <div>
+      <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+      {currentEpisodeTitle && (
+        <p className="mt-1.5 text-sm text-muted-foreground">正在播放 · {currentEpisodeTitle}</p>
+      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {score && (
+          <Badge className="h-auto bg-amber-400 font-bold text-black hover:bg-amber-400">
+            {score}
+          </Badge>
+        )}
+        {typeName && <Badge variant="default">{typeName}</Badge>}
+        {year && <Badge variant="secondary">{year}</Badge>}
+        {area && <Badge variant="secondary">{area}</Badge>}
+        {remark && <Badge variant="secondary">{remark}</Badge>}
+        {sourceName && <Badge variant="outline">{sourceName}</Badge>}
+      </div>
+      {cleanDesc && (
+        <>
+          <div className="mt-5 mb-2 text-xs font-semibold text-muted-foreground">简介</div>
+          <p className="whitespace-pre-line text-sm leading-7 text-foreground/90">{cleanDesc}</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function PlaybackPanel({
+  totalEpisodes,
+  episodesTitles,
+  episodeValue,
+  onEpisodeChange,
+  currentSource,
+  currentId,
+  availableSources,
+  onSourceChange,
+  info,
+}: PlaybackPanelProps) {
+  const currentKey = `${currentSource}+${currentId}`;
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pendingKey && pendingKey === currentKey) setPendingKey(null);
+  }, [pendingKey, currentKey]);
+
+  const activeKey = pendingKey ?? currentKey;
+  const isSwitching = pendingKey !== null;
+
+  const handleSourceClick = async (src: SourceLike) => {
+    const key = `${src.source}+${src.id}`;
+    if (key === currentKey) return;
+    setPendingKey(key);
+    try {
+      await onSourceChange(src.source, src.id, src.source_name);
+    } catch {
+      setPendingKey(null);
+    }
+  };
+
+  return (
+    <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <Tabs defaultValue="episodes" className="flex h-full min-h-0 flex-col">
+        <div className="border-b border-border p-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="episodes">
+              选集{totalEpisodes > 0 && ` (${totalEpisodes})`}
+            </TabsTrigger>
+            <TabsTrigger value="sources">
+              换源{availableSources.length > 0 && ` (${availableSources.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="info">信息</TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="episodes" className="m-0 flex-1 overflow-hidden">
+          {totalEpisodes > 0 ? (
+            <ScrollArea className="h-full">
+              <div className="grid grid-cols-5 gap-1.5 p-3 sm:grid-cols-6 lg:grid-cols-5">
+                {Array.from({ length: totalEpisodes }, (_, i) => {
+                  const active = episodeValue === i + 1;
+                  const label = episodesTitles[i] || `${i + 1}`;
+                  return (
+                    <Button
+                      key={i}
+                      type="button"
+                      size="sm"
+                      variant={active ? 'default' : 'secondary'}
+                      onClick={() => onEpisodeChange(i + 1)}
+                      title={label}
+                      className="h-9 min-w-0 px-1 text-xs tabular-nums"
+                    >
+                      <span className="block truncate">{label}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="py-12 text-center text-sm text-muted-foreground">暂无选集</div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="sources" className="m-0 flex-1 overflow-hidden">
+          {availableSources.length > 0 ? (
+            <ScrollArea className="h-full">
+              <div className="grid grid-cols-2 gap-1.5 p-3 sm:grid-cols-3 lg:grid-cols-3">
+                {availableSources.map((src) => {
+                  const key = `${src.source}+${src.id}`;
+                  const isActive = activeKey === key;
+                  const isLoading = pendingKey === key;
+                  return (
+                    <Button
+                      key={key}
+                      type="button"
+                      size="sm"
+                      variant={isActive ? 'default' : 'secondary'}
+                      onClick={() => handleSourceClick(src)}
+                      disabled={isSwitching}
+                      title={src.source_name}
+                      className="h-10 min-w-0 px-2 text-xs"
+                    >
+                      {isLoading ? (
+                        <Spinner className="size-3" />
+                      ) : (
+                        <span className="block truncate">{src.source_name}</span>
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="py-12 text-center text-sm text-muted-foreground">无其他可用源</div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="info" className="m-0 flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-4">
+              <DetailMeta {...info} />
+            </div>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

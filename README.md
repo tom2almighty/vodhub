@@ -1,76 +1,55 @@
+[English](README.en.md)
+
 # vodhub
 
-Mac CMS 聚合，基于 React + Vite + [@ouonnki/cms-core](https://www.npmjs.com/package/@ouonnki/cms-core)，支持 Vercel、Cloudflare Pages、Netlify 与 Docker 部署，最初基于 [LunaTV](https://github.com/MoonTechLab/LunaTV)，现已完全重构。
+## 项目简介
 
-## 部署
+基于 Go 与 React 构建的单二进制自托管 Mac CMS（苹果CMS）视频聚合与播放服务，内置视频源管理、并发流式搜索、相关性过滤、豆瓣推荐代理以及按源可选的 API 请求代理。
 
-先在目标平台配置环境变量，再部署。至少需要 `ADMIN_PASSWORD`、`AUTH_SECRET`，以及 `SOURCES_URL` 或 `SOURCES_JSON` 其中一个。
+## 开发环境配置
 
-| 平台             | 推荐方式              | 部署说明                                                                                                            |
-| ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Vercel           | 从 Git 仓库导入       | Framework Preset 选择 Vite，Build Command 使用 `pnpm build`，Output Directory 使用 `dist`。配置环境变量后直接部署。 |
-| Cloudflare Pages | 从 Git 仓库连接 Pages | Build Command 使用 `pnpm build`，Build Output Directory 使用 `dist`。在 Pages 的环境变量里配置必填项。              |
-| Netlify          | 从 Git 仓库导入       | Build Command 使用 `pnpm build`，Publish Directory 使用 `dist`。`netlify.toml` 已包含 API 与 SPA 回退配置。         |
-| Docker Compose   | 服务器自托管          | 修改 `compose.yaml` 里的环境变量，然后执行 `docker compose up -d`。默认访问端口为 `3000`。                          |
-| 本地开发         | 本机运行              | 执行 `pnpm install`，复制并配置本地环境变量后运行 `pnpm dev`，默认访问 `http://localhost:3000`。                    |
+环境要求：Go 1.26+、Node.js 22+、pnpm 12+。
 
-Cloudflare Pages 也可以用 Wrangler 手动部署：
+1. 准备环境变量：
 
-```sh
-pnpm build
-npx wrangler pages deploy dist
+```bash
+cp .env.example .env
 ```
 
-## 环境变量
+必填项：`ADMIN_PASSWORD`（管理员密码）、`AUTH_SECRET`（32 位以上随机密钥）。可选配置 `ACCESS_PASSWORD`（访客/朋友访问密码）与 `UPSTREAM_PROXY`（仅用于勾选 `useProxy` 的视频源 API 元数据请求，不代理视频播放）。
 
-| 变量                        | 必填   | 说明                                             |
-| --------------------------- | ------ | ------------------------------------------------ |
-| `SITE_NAME`                 | 否     | 站点名称，默认 `vodhub`                          |
-| `SITE_ANNOUNCEMENT`         | 否     | 站点公告内容，登录后首页顶部展示（留空则不显示） |
-| `SITE_ANNOUNCEMENT_TITLE`   | 否     | 站点公告标题（可选，配合 `SITE_ANNOUNCEMENT`）   |
-| `ADMIN_PASSWORD`            | 是     | 站点登录密码                                     |
-| `AUTH_SECRET`               | 是     | 登录 token 签名密钥（建议 32+ 字符随机串）       |
-| `AUTH_TOKEN_TTL`            | 否     | token 有效期（秒），默认 604800                  |
-| `SOURCES_URL`               | 二选一 | 视频源订阅地址（JSON）                           |
-| `SOURCES_JSON`              | 二选一 | 视频源 JSON 内联配置                             |
-| `SEARCH_CONCURRENCY`        | 否     | CMS 聚合搜索并发数，默认 5，上限 20              |
-| `IMAGE_PROXY_ALLOWED_HOSTS` | 否     | 图片代理额外放行的域名，逗号分隔（默认仅豆瓣域） |
-| `SOURCES_CACHE_TTL_MS`      | 否     | 视频源配置缓存时长（毫秒），默认 300000          |
-| `SOURCES_RETRY_MS`          | 否     | 源加载失败后的重试间隔（毫秒），默认 15000       |
-| `SOURCES_FETCH_TIMEOUT_MS`  | 否     | 拉取视频源配置的超时（毫秒），默认 15000         |
+2. 启动后端（默认监听 `:3000`）：
 
-## 视频源配置
-
-与 [OuonnkiTV](https://github.com/Ouonnki/OuonnkiTV) 源格式一致。
-
-```json
-[
-  {
-    "id": "my_source",
-    "name": "示例资源",
-    "url": "http://xxx.com/api.php/provide/vod",
-    "detailUrl": "http://xxx.com",
-    "timeout": 10000,
-    "retry": 2,
-    "isEnabled": true
-  }
-]
+```bash
+go run ./cmd/vodhub
 ```
 
-登录后可在搜索框旁的“视频源”面板里关闭个别源，导航栏的设置入口也可打开同一面板。选择保存在浏览器 localStorage，只影响搜索聚合与自动匹配；历史记录和直达播放不受影响。修改后当前搜索结果会自动刷新。
+3. 启动前端开发服务器（默认监听 `:5173`，自动将 `/api` 代理至 `:3000`）：
 
-## 重要提醒
+```bash
+cd web
+pnpm install
+pnpm dev
+```
 
-> [!IMPORTANT]
->
-> - 本项目仅用于技术学习和交流目的，不提供任何商业服务。
-> - 本应用不提供或分发任何视频源，用户自行聚合的内容来源于第三方平台，我们不对内容的合法性、准确性、完整性或可用性承担任何责任。
-> - 所有影视内容的版权归原作者和版权方所有，请用户自觉遵守相关法律法规，支持正版。
-> - 用户使用本应用所产生的任何直接或间接损失，开发者不承担任何责任。
-> - 请用户在使用过程中遵守当地法律法规，不得用于任何违法用途。
-> - 请用户自行承担数据安全风险。
->   使用本应用即表示您已阅读并同意上述免责声明。
+## 构建与部署
 
-## License
+构建单二进制可执行文件（前端产物自动嵌入二进制）：
 
-[AGPL-3.0](LICENSE)
+```bash
+cd web && pnpm install && pnpm build && cd ..
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/vodhub ./cmd/vodhub
+./bin/vodhub
+```
+
+Docker Compose 部署（编辑 `compose.yaml` 后启动）：
+
+```bash
+docker compose up -d
+```
+
+容器使用绑定挂载 `./data:/app/data` 持久化视频源配置（`sources.json`），默认服务端口 `3000`。
+
+## 开源许可证
+
+本项目采用 [AGPL-3.0](LICENSE) 许可证。

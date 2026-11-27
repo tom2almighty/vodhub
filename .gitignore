@@ -1,38 +1,30 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Binaries & build outputs
+bin/
+dist/
+vodhub
+vodhub.exe
+web/dist/*
+!web/dist/.gitkeep
+web/node_modules/
+web/*.tsbuildinfo
 
-# Dependencies
-node_modules
-.pnpm-store
-
-# Build output
-dist
-*.tsbuildinfo
-
-# Local env files
+# Local data & env
+data/
 .env
 .env.*.local
 .env.local
 
-# Editor / IDE
+# Editor / IDE / OS
 .vscode
 .idea
 *.swp
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-.pnpm-debug.log*
 
-# Worktrees / scratch
+# Worktrees / scratch / agent
 .worktrees
 _tmp_*
-
-# Agent
 .claude
 .agent
 .codex

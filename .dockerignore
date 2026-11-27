@@ -1,58 +1,17 @@
-# Dependencies
-node_modules
-.pnpm-store
-
-# Build output
-dist
-*.tsbuildinfo
-
-# Env
-.env
-.env*.local
-
-# Git
 .git
-.gitignore
-.gitattributes
-
-# CI / GitHub
 .github
-
-# Editor / IDE
+data
+submodule
+bin
+vodhub
+vodhub.exe
+.env
+.env.*
+web/node_modules
+web/dist
+*.log
 .vscode
 .idea
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-
-# Docs not needed in image
-README.md
-LICENSE
-CHANGELOG.md
-*.md
-
-# Docker meta
-Dockerfile*
-compose.yaml
-docker-compose*.yml
-.dockerignore
-
-# Platform-specific function entrypoints (not used by Docker)
-api
-functions
-netlify
-
-# Agent / scratch
 .claude
 .agent
 .codex
-.worktrees
-_tmp_*

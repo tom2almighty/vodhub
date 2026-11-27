@@ -5,11 +5,18 @@ services:
     restart: unless-stopped
     ports:
       - '127.0.0.1:3000:3000'
+    volumes:
+      - ./data:/app/data
     environment:
       - SITE_NAME=VODHUB
-      - ADMIN_PASSWORD=your_password
+      - ADMIN_PASSWORD=your_admin_password
+      # 可选：给朋友使用的访客密码（不可修改后台视频源，历史和临时源开关各自浏览器隔离）
+      # - ACCESS_PASSWORD=your_friend_password
       - AUTH_SECRET=change_me_to_a_long_random_string
-      - SOURCES_URL=https://example.com/sources.json
+      - DATA_DIR=/app/data
       - SEARCH_CONCURRENCY=10
       - AUTH_TOKEN_TTL=604800
-      # - SOURCES_JSON=[]
+      # 可选：仅用于勾选了「API 走代理」的视频源元数据请求（绝不代理视频播放流量）
+      # - UPSTREAM_PROXY=http://127.0.0.1:7890
+      # 首次启动可选初始化种子源（之后全部在 /sources 页面管理）
+      # - SOURCES_URL=https://example.com/sources.json

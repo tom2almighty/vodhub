@@ -1,31 +1,34 @@
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS web-builder
 RUN corepack enable && corepack prepare pnpm@12.9.1 --activate
-WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+WORKDIR /app/web
+COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
-COPY . .
+COPY web ./
 RUN pnpm build
 
-FROM node:22-alpine AS prod-deps
-RUN corepack enable && corepack prepare pnpm@12.9.1 --activate
+FROM golang:1.26-alpine AS go-builder
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --prod
+COPY go.mod go.sum ./
+RUN go mod download
+COPY cmd ./cmd
+COPY internal ./internal
+COPY web/embed.go ./web/embed.go
+COPY --from=web-builder /app/web/dist ./web/dist
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/vodhub ./cmd/vodhub
 
-FROM node:22-alpine AS runner
-RUN apk add --no-cache tini
+FROM alpine:3.21 AS runner
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -S vodhub \
+    && adduser -S -G vodhub vodhub \
+    && mkdir -p /app/data \
+    && chown -R vodhub:vodhub /app
 WORKDIR /app
-COPY --from=builder --chown=node:node /app/dist ./dist
-COPY --from=builder --chown=node:node /app/server.js ./server.js
-COPY --from=builder --chown=node:node /app/server ./server
-COPY --from=builder --chown=node:node /app/package.json ./package.json
-COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
-ENV NODE_ENV=production PORT=3000 SITE_NAME=vodhub
+COPY --from=go-builder --chown=vodhub:vodhub /out/vodhub /app/vodhub
+ENV PORT=3000 SITE_NAME=vodhub DATA_DIR=/app/data
+VOLUME ["/app/data"]
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
-USER node
-ENTRYPOINT ["tini", "--"]
-CMD ["node", "server.js"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1
+USER vodhub
+ENTRYPOINT ["/app/vodhub"]
