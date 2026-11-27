@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 )
@@ -45,10 +46,8 @@ func NewImageProxy(allowedHosts []string) *ImageProxy {
 			if err != nil {
 				return nil, err
 			}
-			for _, ip := range ips {
-				if isBlockedIP(ip) {
-					return nil, errBlockedHost
-				}
+			if slices.ContainsFunc(ips, isBlockedIP) {
+				return nil, errBlockedHost
 			}
 			if len(ips) == 0 {
 				return nil, errBlockedHost

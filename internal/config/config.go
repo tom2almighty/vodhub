@@ -2,6 +2,7 @@ package config
 
 import (
 	"bufio"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -42,17 +43,11 @@ type Config struct {
 func Load() Config {
 	loadDotEnv(".env")
 
-	concurrency := envInt("SEARCH_CONCURRENCY", defaultSearchConcurrency)
-	if concurrency < 1 {
-		concurrency = 1
-	}
-	if concurrency > maxSearchConcurrency {
-		concurrency = maxSearchConcurrency
-	}
+	concurrency := min(max(envInt("SEARCH_CONCURRENCY", defaultSearchConcurrency), 1), maxSearchConcurrency)
 
 	hosts := []string{"doubanio.com", "douban.com"}
 	if extra := envStr("IMAGE_PROXY_ALLOWED_HOSTS"); extra != "" {
-		for _, item := range strings.Split(extra, ",") {
+		for item := range strings.SplitSeq(extra, ",") {
 			if h := strings.ToLower(strings.TrimSpace(item)); h != "" {
 				hosts = append(hosts, h)
 			}
@@ -133,5 +128,8 @@ func loadDotEnv(path string) {
 			val = val[1 : len(val)-1]
 		}
 		_ = os.Setenv(key, val)
+	}
+	if err := scanner.Err(); err != nil {
+		slog.Warn("failed to read .env file", "path", path, "error", err)
 	}
 }
